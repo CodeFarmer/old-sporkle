@@ -26,13 +26,13 @@
 (def CONSTANT_Fieldref	          9)
 (def CONSTANT_Methodref	         10)
 (def CONSTANT_InterfaceMethodref 11)
-(def CONSTANT_String	          8)
-(def CONSTANT_Integer	          3)
-(def CONSTANT_Float	          4)
-(def CONSTANT_Long	          5)
-(def CONSTANT_Double	          6)
-(def CONSTANT_NameAndType	 12)
-(def CONSTANT_Utf8	          1)
+(def CONSTANT_String              8)
+(def CONSTANT_Integer             3)
+(def CONSTANT_Float               4)
+(def CONSTANT_Long                5)
+(def CONSTANT_Double              6)
+(def CONSTANT_NameAndType        12)
+(def CONSTANT_Utf8                1)
 
 ;; access flags
 
