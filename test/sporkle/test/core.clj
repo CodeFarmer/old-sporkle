@@ -8,6 +8,26 @@
     (let [cs (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))]
       (testing "when the seq is new"
         (is (= 0xCA (first cs)) "we should be able to get a byte from the stream")
-        (is (= 188 (count cs)) "the seq should return the byte count of the stream"))
+        (is (= 188 (count cs)) "the seq have the right number of bytes"))
       (testing "after some bytes have been taken"
         (is (= '(0xCA 0xFE) (take 2 cs)) "we should be able to retake bytes (ie., behave like a seq and not a stream")))))
+
+(deftest test-bytes-to-integral-type
+  (testing "bytes-to-integral-type"
+    (testing "given no bytes"
+      (is (nil? (bytes-to-integral-type ()))))
+    (testing "given four bytes"
+      (let [b4 (bytes-to-integral-type [0 0 0 4])]
+        (is (= java.lang.Integer (type b4)) "should return an integer")
+        (is (= 4 b4) "should return the correct low byte number"))
+      (let [b (bytes-to-integral-type [0x00 0x00 0x01 0x00])]
+        (is (= 0x00000100 b) "should return the correct 3rd-byte integer"))
+      (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A])]
+        (is (= java.lang.Integer (type b)) "should return an integer, as long as it doesn't trip the sign bit")
+        (is (= 0x0912F42A) "should return the correct multi-byte integer")))
+    (testing "given eight bytes"
+      (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
+        (is (= java.lang.Long (type b)) "should return a long, as long as it doesn't trip the sign bit :(")
+        (is (= 653853357300184066 b)) "should return the correct multi-byte long")
+      (let [b (bytes-to-integral-type [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
+        (is (= java.math.BigInteger (type b)) "should overflow into BigInteger when bigger than Long.MAX_VALUE")))))
