@@ -1,4 +1,5 @@
-(ns sporkle.core)
+(ns sporkle.classfile
+  (:use [sporkle.core]))
 
 ;; ClassFile {
 ;; 	u4 magic;
@@ -27,10 +28,12 @@
 (def CONSTANT_Methodref	         10)
 (def CONSTANT_InterfaceMethodref 11)
 (def CONSTANT_String              8)
+
 (def CONSTANT_Integer             3)
 (def CONSTANT_Float               4)
 (def CONSTANT_Long                5)
 (def CONSTANT_Double              6)
+
 (def CONSTANT_NameAndType        12)
 (def CONSTANT_Utf8                1)
 
@@ -51,4 +54,20 @@
 (def ACC_INTERFACE    0x0200) ;; Class: is an interface, not a class.
 (def ACC_ABSTRACT     0x0400) ;; Class: may not be instantiated. Method: no implementation is provided
 (def ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
+
+
+;; read-foo all return [n, struct] where n is the number of bytes munched
+(defn read-utf8-entry [bytes]
+  (let [[tag & rest] bytes]
+    (let [length (bytes-to-integral-type (take 2 rest))]
+      [(+ 3 length) {:tag CONSTANT_Utf8 :length length :bytes (take length (drop 2 rest))}])))
+
+(defn read-constant-pool-entry [bytes]
+  (let [tag (first bytes) data (rest bytes)]
+    (case tag
+      CONSTANT_Integer
+      [5 { :tag tag :bytes (take 4 data) }]
+      CONSTANT_Utf8
+      (read-utf8-entry bytes))))
+
 
