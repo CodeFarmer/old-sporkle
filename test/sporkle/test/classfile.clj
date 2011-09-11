@@ -10,14 +10,14 @@
 
   (testing "Reading from a known UTF8 constant from a classfile, with some trailing bytes"
 
-    (let [[count entry] (read-constant-pool-entry
-                         [0x01 0x00 0x0C 0x4E  0x6F 0x74 0x68 0x69
-                          0x6E 0x67 0x2E 0x6A  0x61 0x76 0x61 0x0C
-                          ;; 0x61 is actually the last byte ^ of the entry
-                          00 04])]
+    (let [[entry rest] (read-constant-pool-entry
+                        [0x01 0x00 0x0C 0x4E  0x6F 0x74 0x68 0x69
+                         0x6E 0x67 0x2E 0x6A  0x61 0x76 0x61 0x0C
+                         ;; 0x61 is actually the last byte ^ of the entry
+                         00 04])]
                           
-      (is (= 15 count)
-          "should correctly return the number of bytes read")
+      (is (= [0x0C 0x00 0x04] rest)
+          "should correctly return the remaining bytes")
       (is (= CONSTANT_Utf8 (:tag entry))
           "should correctly set the tag")
       (is (= 12 (:length entry))
@@ -29,9 +29,9 @@
   
   (testing "Reading an integer constant, with a trailing byte"
 
-    (let [[count entry] (read-constant-pool-entry [0x03 0x00 0x10 0x01 0x01 0xFF])]
+    (let [[entry rest] (read-constant-pool-entry [0x03 0x00 0x10 0x01 0x01 0xFF])]
       
-      (is (= 5 count)                     "should correctly return the number of bytes read")
+      (is (= [0xFF] rest)                          "should correctly return the remaining bytes")
       (is (= [0x00 0x10 0x01 0x01] (:bytes entry)) "should read only the two integer bytes")))
 
   (testing "Reading from a constant with an unknown tag value"

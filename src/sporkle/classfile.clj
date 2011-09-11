@@ -56,20 +56,22 @@
 (def ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-;; return [n, struct] where n is the number of bytes munched
+;; return [struct, remainder]
 (defmulti read-constant-pool-entry first)
 
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-integral-type (take 2 rest))]
-      [(+ 3 length) {:tag tag :length length :bytes (take length (drop 2 rest))}])))
+      [{:tag tag :length length :bytes (take length (drop 2 rest))}
+       (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
-  [5 (first (unpack-struct [[:tag 1] [:bytes 4]] bytes))])
+  (unpack-struct [[:tag 1] [:bytes 4]] bytes))
 
 (defmethod read-constant-pool-entry :default [bytes]
   (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (first bytes)))))
 
+;;
 
 ;; the overall stream-to-class funtion
 
