@@ -56,8 +56,7 @@
 (def ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-;; read-foo all return [n, struct] where n is the number of bytes munched
-
+;; return [n, struct] where n is the number of bytes munched
 (defmulti read-constant-pool-entry first)
 
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
@@ -69,4 +68,5 @@
   (let [[tag & data] bytes]
     [5 {:tag tag :bytes (take 4 data) }]))
 
-
+(defmethod read-constant-pool-entry :default [bytes]
+  (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (first bytes)))))

@@ -5,7 +5,7 @@
 
 ;; (deftest read-constant-pool-entry)
 
-(deftest test-read-constant-pool-entry-entry
+(deftest test-read-constant-pool-entry
 
   (testing "Reading from a known UTF8 constant from a classfile, with some trailing bytes"
 
@@ -27,6 +27,11 @@
     (let [[count entry] (read-constant-pool-entry [0x03 0x00 0x10 0x01 0x01 0xFF])]
       
       (is (= 5 count)                     "should correctly return the number of bytes read")
-      (is (= [0x00 0x10 0x01 0x01] (:bytes entry)) "should read only the two integer bytes"))))
+      (is (= [0x00 0x10 0x01 0x01] (:bytes entry)) "should read only the two integer bytes")))
+
+  (testing "Reading from a constant with an unknown tag value"
+
+    (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0C 0xFF 0xFF])))))
+
 
 
