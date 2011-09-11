@@ -57,17 +57,16 @@
 
 
 ;; read-foo all return [n, struct] where n is the number of bytes munched
-(defn read-utf8-entry [bytes]
+
+(defmulti read-constant-pool-entry first)
+
+(defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-integral-type (take 2 rest))]
-      [(+ 3 length) {:tag CONSTANT_Utf8 :length length :bytes (take length (drop 2 rest))}])))
+      [(+ 3 length) {:tag tag :length length :bytes (take length (drop 2 rest))}])))
 
-(defn read-constant-pool-entry [bytes]
-  (let [tag (first bytes) data (rest bytes)]
-    (case tag
-      CONSTANT_Integer
-      [5 { :tag tag :bytes (take 4 data) }]
-      CONSTANT_Utf8
-      (read-utf8-entry bytes))))
+(defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
+  (let [[tag & data] bytes]
+    [5 {:tag tag :bytes (take 4 data) }]))
 
 
