@@ -12,6 +12,7 @@
       (testing "after some bytes have been taken"
         (is (= '(0xCA 0xFE) (take 2 cs)) "we should be able to retake bytes (ie., behave like a seq and not a stream")))))
 
+
 (deftest test-bytes-to-integral-type
   (testing "bytes-to-integral-type"
     (testing "given no bytes"
@@ -31,3 +32,15 @@
         (is (= 653853357300184066 b)) "should return the correct multi-byte long")
       (let [b (bytes-to-integral-type [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
         (is (= java.math.BigInteger (type b)) "should overflow into BigInteger when bigger than Long.MAX_VALUE")))))
+
+
+(deftest test-unpack-struct
+  (testing "reading a simple struct from a stream with some trailing bytes"
+    (let [[java-class remainder]
+          (unpack-struct
+            [[:magic 4] [:minor-version 2] [:major-version 2]]
+            [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32  0x00 0x0D 0x0A 0x00])]
+      (is (= (:magic java-class) [0xCA 0xFE 0xBA 0xBE]) "first 4 bytes should be 0xCAFEBABE")
+      (is (= (:minor-version java-class) [0x00 0x00]) "Next two bytes are the minor version, set to 0x0000")
+      (is (= (:major-version java-class) [0x00 0x32]) "Final two bytes are the major version, set to 0x0032")
+      (is (= [0x00 0x0D 0x0A 0x00] remainder) "should return the remainder as a seq for further processing"))))

@@ -25,3 +25,15 @@
       (if (empty? bytes)
         acc
         (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
+
+(defn unpack-struct
+  "Given a list of pairs of [:key integer] and a seq, return a vec containing 1) the unused portion of the seq and 2) a map whose keys are all the keys from the pairs, plus seqs of n consecutive items from aseq each (in the order they appear in avec)"
+  ([avec aseq]
+     (unpack-struct {} avec aseq))
+  ([amap avec aseq]
+     (let [[field-key field-size] (first avec) field-data (take field-size aseq)]
+       (cond
+        (nil? field-key) [amap aseq] ;; this is the return value
+        (< field-size (count field-data)) (throw (IndexOutOfBoundsException. (str "Ran out of stream unpacking struct field " field-key ", needed " field-size ", got " field-data)))
+        :else (recur (assoc amap field-key field-data) (rest avec) (drop field-size aseq))))))
+
