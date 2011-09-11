@@ -65,8 +65,13 @@
       [(+ 3 length) {:tag tag :length length :bytes (take length (drop 2 rest))}])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
-  (let [[tag & data] bytes]
-    [5 {:tag tag :bytes (take 4 data) }]))
+  [5 (first (unpack-struct [[:tag 1] [:bytes 4]] bytes))])
 
 (defmethod read-constant-pool-entry :default [bytes]
   (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (first bytes)))))
+
+
+;; the overall stream-to-class funtion
+
+(defn read-java-class [bytes]
+  (throw (ClassFormatError. "read-java-class needs implementing")))
