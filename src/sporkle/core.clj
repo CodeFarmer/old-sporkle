@@ -35,5 +35,6 @@
        (cond
         (nil? field-key) [amap aseq] ;; this is the return value
         (< field-size (count field-data)) (throw (IndexOutOfBoundsException. (str "Ran out of stream unpacking struct field " field-key ", needed " field-size ", got " field-data)))
+        (= 1 field-size) (recur (assoc amap field-key (first field-data)) (rest avec) (rest aseq))
         :else (recur (assoc amap field-key field-data) (rest avec) (drop field-size aseq))))))
 
