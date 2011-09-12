@@ -34,8 +34,29 @@
       (is (= [0xFF] rest)                          "should correctly return the remaining bytes")
       (is (= [0x00 0x10 0x01 0x01] (:bytes entry)) "should read only the two integer bytes")))
 
-  (testing "Reading from a constant with an unknown tag value"
+  (testing "reading a method ref entry, with a trailing byte"
 
+    (let [[entry rest] (read-constant-pool-entry [0x0A 0x00 0x03 0x00 0x0A])]
+    (is (= CONSTANT_Methodref (:tag entry)) "should record the correct tag")
+    (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes"))
+
+  (testing "reading a field ref entry, with a trailing byte"
+
+    (let [[entry rest] (read-constant-pool-entry [0x09 0x00 0x03 0x00 0x0A])]
+      (is (= CONSTANT_Fieldref (:tag entry)) "should record the correct tag")
+      (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
+      (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes")))))
+
+  (testing "reading an interface method ref entry, with a trailing byte"
+
+    (let [[entry rest] (read-constant-pool-entry [0x0B 0x00 0x03 0x00 0x0A])]
+      (is (= CONSTANT_InterfaceMethodref (:tag entry)) "should record the correct tag")
+      (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
+      (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))))
+
+
+  (testing "Reading from a constant with an unknown tag value"
+    
     (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0D 0xFF 0xFF])))))
 
 
