@@ -20,23 +20,6 @@
 ;; 	attribute_info attributes[attributes_count];
 ;; }
 
-
-;; constant pool entries
-
-(def CONSTANT_Class               7)
-(def CONSTANT_Fieldref	          9)
-(def CONSTANT_Methodref	         10)
-(def CONSTANT_InterfaceMethodref 11)
-(def CONSTANT_String              8)
-
-(def CONSTANT_Integer             3)
-(def CONSTANT_Float               4)
-(def CONSTANT_Long                5)
-(def CONSTANT_Double              6)
-
-(def CONSTANT_NameAndType        12)
-(def CONSTANT_Utf8                1)
-
 ;; access flags
 
 (def ACC_PUBLIC	      0x0001) ;; Class, method: may be accessed from outside its package.
@@ -56,7 +39,25 @@
 (def ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-;; return [struct, remainder]
+
+;; constant pool entries
+
+(def CONSTANT_Class               7)
+(def CONSTANT_Fieldref	          9)
+(def CONSTANT_Methodref	         10)
+(def CONSTANT_InterfaceMethodref 11)
+(def CONSTANT_String              8)
+
+(def CONSTANT_Integer             3)
+(def CONSTANT_Float               4)
+(def CONSTANT_Long                5)
+(def CONSTANT_Double              6)
+
+(def CONSTANT_NameAndType        12)
+(def CONSTANT_Utf8                1)
+
+;; conforms to the expectations of read-stream-maplets
+;; FIXME document this
 (defmulti read-constant-pool-entry first)
 
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
@@ -87,16 +88,23 @@
 
 ;;
 
-(defn read-constant-pool
+(defn read-constant-pool-maplet
+  "Return a map containing the key :constant-pool, and a seq of constant pool entries"
+
   ([bytes]
      ;; I have no idea why the actual count is equal to the count field minus one
-     (read-constant-pool () (dec (bytes-to-integral-type (take 2 bytes))) (drop 2 bytes)))
+     (read-constant-pool-maplet () (dec (bytes-to-integral-type (take 2 bytes))) (drop 2 bytes)))
+
   ([acc count bytes]
-     (if (= 0 count) [acc bytes]
+     (if (= 0 count) [{:constant-pool acc} bytes]
          (let [[entry remaining-bytes] (read-constant-pool-entry bytes)]
               (recur (cons entry acc) (dec count) remaining-bytes)))))
 
-;; the overall stream-to-class funtion
 
+;; the overall stream-to-class funtion
 (defn read-java-class [bytes]
-  (throw (ClassFormatError. "read-java-class needs implementing")))
+
+  (read-stream-maplets
+   [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
+    read-constant-pool-maplet]
+   bytes))

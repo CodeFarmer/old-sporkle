@@ -45,35 +45,36 @@
     (let [[entry rest] (read-constant-pool-entry [0x09 0x00 0x03 0x00 0x0A])]
       (is (= CONSTANT_Fieldref (:tag entry)) "should record the correct tag")
       (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
-      (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes")))))
+      (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))
 
-  (testing "reading an interface method ref entry, with a trailing byte"
+    (testing "reading an interface method ref entry, with a trailing byte"
 
-    (let [[entry rest] (read-constant-pool-entry [0x0B 0x00 0x03 0x00 0x0A])]
-      (is (= CONSTANT_InterfaceMethodref (:tag entry)) "should record the correct tag")
-      (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
-      (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))))
+      (let [[entry rest] (read-constant-pool-entry [0x0B 0x00 0x03 0x00 0x0A])]
+        (is (= CONSTANT_InterfaceMethodref (:tag entry)) "should record the correct tag")
+        (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
+        (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))))
 
 
   (testing "Reading from a constant with an unknown tag value"
     
-    (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0D 0xFF 0xFF])))))
+    (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0D 0xFF 0xFF]))))))
 
 
-(deftest test-read-constant-pool
+(deftest test-read-constant-pool-maplet
   (testing "with the constant pool bytes from a small class"
-    (let [[constant-pool remainder] (read-constant-pool (drop 8 (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))))]
-      (is (= 12 (count constant-pool)) "should read the right number of constants")
-      (is (every? #(contains? % :tag) constant-pool) "should return a seq of objects with tag fields")
+    (let [[constant-pool-maplet remainder] (read-constant-pool-maplet (drop 8 (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))))]
+      (let [pool (:constant-pool constant-pool-maplet)]
+        (is (= 12 (count pool)) "should read the right number of constants")
+        (is (every? #(contains? % :tag) pool) "should return a seq of objects with tag fields"))
       ;; IMPLEMENT ME
       )))
 
-(comment (deftest test-read-java-class
-    (testing "reading a simple class"
-      (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
-        (is (= [0xCA 0xFE 0xBA 0xBE] (:magic java-class)) "gotta get the magic number right")
-        (is (= [0x00 0x00] (:minor-version java-class))   "minor version number of the class file")
-        (is (= [0x00 0x32] (:major-version java-class))   "major version number of the class file")
-        (is (= 13 (count (:constant-pool java-class))     "should read the correct number of constant pool entries"))
-        ;; ... and the rest, but the constants are necessary first
-        ))))
+(deftest test-read-java-class
+  (testing "reading a simple class"
+    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+      (is (= [0xCA 0xFE 0xBA 0xBE] (:magic java-class)) "gotta get the magic number right")
+      (is (= [0x00 0x00] (:minor-version java-class))   "minor version number of the class file")
+      (is (= [0x00 0x32] (:major-version java-class))   "major version number of the class file")
+      (is (= 12 (count (:constant-pool java-class)))     "should read the correct number of constant pool entries")
+      ;; ... and the rest, but the constants are necessary first
+      )))
