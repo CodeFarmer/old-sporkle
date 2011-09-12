@@ -52,7 +52,6 @@ Partial applications conform to the expectations of read-stream-maplets."
 
   ([acc funcs bytes]
      (let [f (first funcs)]
-       (println f)
        (if (nil? f) acc
            (let [[maplet remainder] (f bytes)]
              (recur (merge acc maplet) (rest funcs) remainder))))))

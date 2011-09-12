@@ -89,7 +89,7 @@
 ;;
 
 (defn read-constant-pool-maplet
-  "Return a map containing the key :constant-pool, and a seq of constant pool entries"
+  "Return a map containing the key :constant-pool, and a seq of constant pool entries. Conforms to the expectations of read-stream-maplets."
 
   ([bytes]
      ;; I have no idea why the actual count is equal to the count field minus one
