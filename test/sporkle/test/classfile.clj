@@ -36,8 +36,16 @@
 
   (testing "Reading from a constant with an unknown tag value"
 
-    (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0C 0xFF 0xFF])))))
+    (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0D 0xFF 0xFF])))))
 
+
+(deftest test-read-constant-pool
+  (testing "with the constant pool bytes from a small class"
+    (let [[constant-pool remainder] (read-constant-pool (drop 8 (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))))]
+      (is (= 12 (count constant-pool)) "should read the right number of constants")
+      (is (every? #(contains? % :tag) constant-pool) "should return a seq of objects with tag fields")
+      ;; IMPLEMENT ME
+      )))
 
 (comment (deftest test-read-java-class
     (testing "reading a simple class"

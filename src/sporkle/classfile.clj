@@ -68,10 +68,33 @@
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
   (unpack-struct [[:tag 1] [:bytes 4]] bytes))
 
+; NOTE these next three are the same at the moment but that will change
+(defmethod read-constant-pool-entry CONSTANT_Methodref [bytes]
+  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
+(defmethod read-constant-pool-entry CONSTANT_Fieldref [bytes]
+  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
+(defmethod read-constant-pool-entry CONSTANT_InterfaceMethodref [bytes]
+  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
+
+(defmethod read-constant-pool-entry CONSTANT_Class [bytes]
+  (unpack-struct [[:tag 1] [:name-index 2]] bytes))
+
+(defmethod read-constant-pool-entry CONSTANT_NameAndType [bytes]
+  (unpack-struct [[:tag 1] [:name-index 2] [:descriptor-index 2]] bytes))
+
 (defmethod read-constant-pool-entry :default [bytes]
-  (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (first bytes)))))
+  (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (format "0x%02X" (first bytes))))))
 
 ;;
+
+(defn read-constant-pool
+  ([bytes]
+     ;; I have no idea why the actual count is equal to the count field minus one
+     (read-constant-pool () (dec (bytes-to-integral-type (take 2 bytes))) (drop 2 bytes)))
+  ([acc count bytes]
+     (if (= 0 count) [acc bytes]
+         (let [[entry remaining-bytes] (read-constant-pool-entry bytes)]
+              (recur (cons entry acc) (dec count) remaining-bytes)))))
 
 ;; the overall stream-to-class funtion
 
