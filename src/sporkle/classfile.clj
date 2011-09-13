@@ -100,6 +100,18 @@
          (let [[entry remaining-bytes] (read-constant-pool-entry bytes)]
               (recur (cons entry acc) (dec count) remaining-bytes)))))
 
+;; the interface list is a list of byte pairs, interpreted as indexes into the constant pool
+;; FIXME this needs an individual unit test (not just in test-read-java-class)
+(defn read-interface-list-maplet
+  "Return a map containing the key :interfaces, and a seq of interface references. Conforms to the expectations of read-stream-maplets."
+
+  ([bytes]
+     (read-interface-list-maplet () (bytes-to-integral-type (take 2 bytes)) (drop 2 bytes)))
+  
+  ([acc count bytes]
+     (if (= 0 count) [{:interfaces acc} bytes]
+         (recur (cons (take 2 bytes) acc) (dec count) (drop 2 bytes)))))
+
 
 ;; the overall stream-to-class funtion
 (defn read-java-class [bytes]
@@ -107,5 +119,6 @@
   (read-stream-maplets
    [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
     read-constant-pool-maplet
-    #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)]
+    #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
+    read-interface-list-maplet]
    bytes))
