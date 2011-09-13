@@ -112,13 +112,28 @@
      (if (= 0 count) [{:interfaces acc} bytes]
          (recur (cons (take 2 bytes) acc) (dec count) (drop 2 bytes)))))
 
+;; IMPLEMENT ME
+(defn read-attribute [bytes])
+(defn read-attributes [bytes])
 
-;; the overall stream-to-class funtion
+;; FIXME needs test
+(defn read-field-descriptor [bytes]
+  (read-stream-maplets
+   [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
+    read-attributes]))
+
+;; IMPLEMENT ME
+(defn read-field-list-maplet [bytes]
+  [{:fields []} bytes])
+
+;; the overall stream-to-class function
 (defn read-java-class [bytes]
 
-  (read-stream-maplets
-   [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
-    read-constant-pool-maplet
-    #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
-    read-interface-list-maplet]
-   bytes))
+  (first
+   (read-stream-maplets
+    [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
+     read-constant-pool-maplet
+     #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
+     read-interface-list-maplet
+     read-field-list-maplet]
+    bytes)))

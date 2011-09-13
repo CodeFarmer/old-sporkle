@@ -88,9 +88,20 @@
       ;; and the interfaces...
       (is (= 0 (count (:interfaces java-class))) "should have no interfaces, because it's so simple")
       (is (seq? (:interfaces java-class)) "should still have something in the interfaces field though")
+      (is (= 0 (count (:fields java-class))) "should have no fields")
+      (is (seq? (:fields java-class)) "should still have something in the fields field though")
       ))
   
   (testing "reading a Java class with some marker interfaces"
 
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/SerializableNothing.class")))]
-      (= 2 (count (:interfaces java-class)) "The class should have two entries in its interface list"))))
+      (= 2 (count (:interfaces java-class)) "The class should have two entries in its interface list")))
+
+  (testing "reading a Java class with some fields"
+
+    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
+      (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
+    
+    ))
+
+
