@@ -52,3 +52,20 @@
     (let [[amap remainder] (unpack-struct [[:front-two 2] [:middle-one 1] [:back-two 2]] [1 2 3 4 5])]
       (is (seq? (:front-two amap)) "multi-item fields should be seqs")
       (is (= 3 (:middle-one amap)) "single-item fields should be atomic"))))
+
+
+(deftest test-read-stream-maplets
+
+  (testing "the correct ordering of reads along a stream"
+
+    (letfn [(f [seq] [{:f (first seq)} (rest seq)])
+            (g [seq] [{:g (first seq)} (rest seq)])
+            (h [seq] [{:h (take 2 seq)} (drop 2 seq)])]
+      (let [amap (read-stream-maplets [f g h] [1 2 3 4 5])]
+        (is (= (:f amap) 1)     "should read f first")
+        (is (= (:g amap) 2)     "should read g second")
+        (is (= (:h amap) [3 4]) "should read h third"))
+      (let [amap (read-stream-maplets [f h g] [1 2 3 4 5])]
+        (is (= (:f amap) 1)     "should read f first")
+        (is (= (:g amap) 4)     "should read g third")
+        (is (= (:h amap) [2 3]) "should read h second")))))
