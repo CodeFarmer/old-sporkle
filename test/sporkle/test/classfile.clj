@@ -75,6 +75,11 @@
       (is (= [0xCA 0xFE 0xBA 0xBE] (:magic java-class)) "gotta get the magic number right")
       (is (= [0x00 0x00] (:minor-version java-class))   "minor version number of the class file")
       (is (= [0x00 0x32] (:major-version java-class))   "major version number of the class file")
-      (is (= 12 (count (:constant-pool java-class)))     "should read the correct number of constant pool entries")
-      ;; ... and the rest, but the constants are necessary first
+      (is (= 12 (count (:constant-pool java-class)))    "should read the correct number of constant pool entries")
+      ;; some more plain fields
+      (let [access-flags (bytes-to-integral-type (:access-flags java-class))]
+        (is (= (bit-or ACC_PUBLIC ACC_SUPER) access-flags) "class should be public with no other modifiers (except the fearsome ACC_SUPER)"))
+      (is (= 2 (count (:this-class java-class))) "should have two bytes for its this-class constant reference")
+      (is (= 2 (count (:super-class java-class))) "should have two bytes for its superclass constant reference")
+      ;; and the interfaces...
       )))

@@ -1,3 +1,3 @@
-class Nothing {
+public class Nothing {
 }
 

@@ -42,10 +42,9 @@ Partial applications conform to the expectations of read-stream-maplets."
         :else (recur (assoc amap field-key field-data) (rest avec) (drop field-size aseq))))))
 
 
-;; FIXME write a test for this other than test-read-java-class :P
 ;; Dammit the threading macro is *so* close to what I need
 (defn read-stream-maplets
-  "Given a (seq of functions that take a seq and return a map plus the unread portion of the seq) and an input seq, return the combination of all the maps created by running the functions in series, each on the remaining seq left after its predecessor, starting with the input seq"
+  "Given a (seq of (functions that take a seq and return a map plus the unread portion of the seq)) and an input seq, return the combination of all the maps created by running the functions in series, each on the remaining seq left after its predecessor, starting with the input seq"
 
   ([funcs bytes]
      (read-stream-maplets {} funcs bytes))

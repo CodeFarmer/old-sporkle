@@ -106,5 +106,6 @@
 
   (read-stream-maplets
    [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
-    read-constant-pool-maplet]
+    read-constant-pool-maplet
+    #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)]
    bytes))
