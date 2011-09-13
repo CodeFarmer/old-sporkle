@@ -61,11 +61,11 @@
     (letfn [(f [seq] [{:f (first seq)} (rest seq)])
             (g [seq] [{:g (first seq)} (rest seq)])
             (h [seq] [{:h (take 2 seq)} (drop 2 seq)])]
-      (let [amap (read-stream-maplets [f g h] [1 2 3 4 5])]
+      (let [[amap _] (read-stream-maplets [f g h] [1 2 3 4 5])]
         (is (= (:f amap) 1)     "should read f first")
         (is (= (:g amap) 2)     "should read g second")
         (is (= (:h amap) [3 4]) "should read h third"))
-      (let [amap (read-stream-maplets [f h g] [1 2 3 4 5])]
+      (let [[amap _] (read-stream-maplets [f h g] [1 2 3 4 5])]
         (is (= (:f amap) 1)     "should read f first")
         (is (= (:g amap) 4)     "should read g third")
         (is (= (:h amap) [2 3]) "should read h second")))))

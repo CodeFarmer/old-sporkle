@@ -44,13 +44,15 @@ Partial applications conform to the expectations of read-stream-maplets."
 
 ;; Dammit the threading macro is *so* close to what I need
 (defn read-stream-maplets
-  "Given a (seq of (functions that take a seq and return a map plus the unread portion of the seq)) and an input seq, return the combination of all the maps created by running the functions in series, each on the remaining seq left after its predecessor, starting with the input seq"
+  "Given a (seq of (functions that take a seq and return a map plus the unread portion of the seq)) and an input seq, return the combination of all the maps created by running the functions in series, each on the remaining seq left after its predecessor, starting with the input seq.
+
+Returns a pair [map, remainder], so it can nest within itself"
 
   ([funcs bytes]
      (read-stream-maplets {} funcs bytes))
 
   ([acc funcs bytes]
      (let [f (first funcs)]
-       (if (nil? f) acc
+       (if (nil? f) [acc bytes]
            (let [[maplet remainder] (f bytes)]
              (recur (merge acc maplet) (rest funcs) remainder))))))
