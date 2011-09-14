@@ -103,7 +103,7 @@
   (testing "reading a simple class"
 
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
-      (println java-class)
+
       (is (= [0xCA 0xFE 0xBA 0xBE] (:magic java-class)) "gotta get the magic number right")
       (is (= [0x00 0x00] (:minor-version java-class))   "minor version number of the class file")
       (is (= [0x00 0x32] (:major-version java-class))   "major version number of the class file")
@@ -118,7 +118,7 @@
       (is (not (nil? (:interfaces java-class))) "should still have something in the interfaces field though")
       (is (= 0 (count (:fields java-class))) "should have no fields")
       (is (not (nil? (:fields java-class))) "should still have something in the fields field though")
-      (is (= 0 (count (:methods java-class))) "should have mo methods")
+      (is (= 1 (count (:methods java-class))) "should have one method (<init>")
       (is (not (nil? (:methods java-class))) "should still have something in the method fields")
       ))
   
@@ -138,6 +138,6 @@
 
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/MethodNothing.class")))]
 
-      (is (= 1 (count (:methods java-class))) "the class should return one method"))))
+      (is (= 2 (count (:methods java-class))) "the class should return one method"))))
 
 
