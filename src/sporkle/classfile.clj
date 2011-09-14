@@ -134,12 +134,21 @@
 (defn read-field-descriptor [bytes]
   (read-stream-maplets
    [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
-    read-attributes-maplet]))
+    read-attributes-maplet]
+   bytes))
 
 
 ;; IMPLEMENT ME
-(defn read-field-list-maplet [bytes]
-  [{:fields ()} bytes])
+(defn read-field-list-maplet
+
+  ([bytes]
+     (let [count (bytes-to-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
+       (read-field-list-maplet () count remainder)))
+
+  ([acc count bytes]
+     (if (zero? count) [{:fields acc} bytes]
+         (let [[field remainder] (read-field-descriptor bytes)]
+           (recur (cons field acc) (dec count) remainder)))))
 
 ;; the overall stream-to-class function
 (defn read-java-class [bytes]

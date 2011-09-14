@@ -123,11 +123,11 @@
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/SerializableNothing.class")))]
       (= 2 (count (:interfaces java-class)) "The class should have two entries in its interface list")))
 
-  (comment (testing "reading a Java class with some fields"
-             
-             (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
-               (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
-             
-             )))
+  (testing "reading a Java class with some fields"
+    
+    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
+      (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
+    
+    ))
 
 
