@@ -74,13 +74,28 @@
 
 (deftest test-read-attribute
 
-  (testing "reading a generic attribute from a byte stream with training bytes"
+  (testing "reading a generic attribute from a byte stream with trailing bytes"
 
     (let [[attr remainder] (read-attribute [0x00 0x01 0x00 0x00 0x00 0x03 0x0A 0x0B 0x0C 0x0D])]
       (is (= [0x00 0x01] (:attribute-name-index attr)) "first two bytes should be the atribute name index")
-      (is (= [0x0A 0x0B 0x0C] (:info attr)) "info should be three bytes long")
+      (is (= [0x0A 0x0B 0x0C] (:info attr)) "info should contain the right three bytes")
       (is (= [0x0D] remainder) "should correctly leave the remaining byte"))))
 
+
+(deftest test-read-attributes-maplet
+
+  (testing "reading an empty attribute list"
+    
+    (is (= [{:attributes []} [0x01 0x02] (read-attributes-maplet [0x00 0x00 0x01 0x02])]) "should return the byte stream, minus the first two zero bytes that display the count"))
+  
+  (testing "reading a simple attribute list, two attributes long, with some trailing bytes")
+
+  (let [[attributes-maplet remainder] (read-attributes-maplet [0x00 0x02 0x00 0x01 0x00 0x00 0x00 0x03 0x0A 0x0B 0x0C 0x00 0x01 0x00 0x00 0x00 0x01 0x0A 0x0B 0x0C])]
+    
+    (let [attr-list (:attributes attributes-maplet)]
+      (is (= 2 (count attr-list)) "should return two attributes in the list"))
+
+    (is (= [0x0B 0x0C] remainder) "should leave the correct remainder")))
 
 (deftest test-read-java-class
 
@@ -108,11 +123,11 @@
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/SerializableNothing.class")))]
       (= 2 (count (:interfaces java-class)) "The class should have two entries in its interface list")))
 
-  (testing "reading a Java class with some fields"
-
-    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
-      (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
-    
-    ))
+  (comment (testing "reading a Java class with some fields"
+             
+             (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
+               (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
+             
+             )))
 
 

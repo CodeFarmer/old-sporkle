@@ -39,7 +39,6 @@
 (def ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-
 ;; constant pool entries
 
 (def CONSTANT_Class               7)
@@ -112,23 +111,35 @@
      (if (= 0 count) [{:interfaces acc} bytes]
          (recur (cons (take 2 bytes) acc) (dec count) (drop 2 bytes)))))
 
-;; IMPLEMENT ME
+
 (defn read-attribute [bytes]
   (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
     [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
 
-(defn read-attributes-maplet [bytes]
-  [{:attributes []} bytes])
 
-;; FIXME needs test
+;; IMPLEMENT ME
+(defn read-attributes-maplet
+
+  ([bytes]
+     
+     (let [count (bytes-to-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
+       (read-attributes-maplet () count remainder)))
+
+  ([acc count bytes]
+     (if (zero? count) [{:attributes acc} bytes]
+         (let [[attr remainder] (read-attribute bytes)]
+           (recur (cons attr acc) (dec count) remainder)))))
+
+
 (defn read-field-descriptor [bytes]
   (read-stream-maplets
    [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
     read-attributes-maplet]))
 
+
 ;; IMPLEMENT ME
 (defn read-field-list-maplet [bytes]
-  [{:fields []} bytes])
+  [{:fields ()} bytes])
 
 ;; the overall stream-to-class function
 (defn read-java-class [bytes]

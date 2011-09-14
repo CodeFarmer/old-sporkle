@@ -13,6 +13,7 @@
         (is (= '(0xCA 0xFE) (take 2 cs)) "we should be able to retake bytes (ie., behave like a seq and not a stream")))))
 
 
+;; TODO this currently ignores sign! Java doesn't... ;)
 (deftest test-bytes-to-integral-type
   (testing "bytes-to-integral-type"
     (testing "given no bytes"
@@ -53,7 +54,8 @@
       (is (seq? (:front-two amap)) "multi-item fields should be seqs")
       (is (= 3 (:middle-one amap)) "single-item fields should be atomic"))))
 
-
+;; TODO consider making this read-bytes-and-return-map-plus-remainder form
+;; into a macro, just for kicks
 (deftest test-read-stream-maplets
 
   (testing "the correct ordering of reads along a stream"
