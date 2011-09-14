@@ -113,14 +113,18 @@
          (recur (cons (take 2 bytes) acc) (dec count) (drop 2 bytes)))))
 
 ;; IMPLEMENT ME
-(defn read-attribute [bytes])
-(defn read-attributes [bytes])
+(defn read-attribute [bytes]
+  (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
+    [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
+
+(defn read-attributes-maplet [bytes]
+  [{:attributes []} bytes])
 
 ;; FIXME needs test
 (defn read-field-descriptor [bytes]
   (read-stream-maplets
    [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
-    read-attributes]))
+    read-attributes-maplet]))
 
 ;; IMPLEMENT ME
 (defn read-field-list-maplet [bytes]
