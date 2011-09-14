@@ -67,7 +67,8 @@
     (let [[constant-pool-maplet remainder] (read-constant-pool-maplet (drop 8 (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))))]
       (let [pool (:constant-pool constant-pool-maplet)]
         (is (= 12 (count pool)) "should read the right number of constants")
-        (is (every? #(contains? % :tag) pool) "should return a seq of objects with tag fields"))
+        (is (every? #(contains? % :tag) pool) "should return a seq of objects with tag fields")
+        (is (= 0x0A (:tag (first pool))) "should have the constant pool objects in the right order"))
       ;; IMPLEMENT ME
       )))
 
@@ -102,6 +103,7 @@
   (testing "reading a simple class"
 
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+      (println java-class)
       (is (= [0xCA 0xFE 0xBA 0xBE] (:magic java-class)) "gotta get the magic number right")
       (is (= [0x00 0x00] (:minor-version java-class))   "minor version number of the class file")
       (is (= [0x00 0x32] (:major-version java-class))   "major version number of the class file")
@@ -113,9 +115,11 @@
       (is (= 2 (count (:super-class java-class))) "should have two bytes for its superclass constant reference")
       ;; and the interfaces...
       (is (= 0 (count (:interfaces java-class))) "should have no interfaces, because it's so simple")
-      (is (seq? (:interfaces java-class)) "should still have something in the interfaces field though")
+      (is (not (nil? (:interfaces java-class))) "should still have something in the interfaces field though")
       (is (= 0 (count (:fields java-class))) "should have no fields")
-      (is (seq? (:fields java-class)) "should still have something in the fields field though")
+      (is (not (nil? (:fields java-class))) "should still have something in the fields field though")
+      (is (= 0 (count (:methods java-class))) "should have mo methods")
+      (is (not (nil? (:methods java-class))) "should still have something in the method fields")
       ))
   
   (testing "reading a Java class with some marker interfaces"
@@ -128,6 +132,12 @@
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
       (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
     
-    ))
+    )
+
+  (testing "reading a Java class with a method"
+
+    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/MethodNothing.class")))]
+
+      (is (= 1 (count (:methods java-class))) "the class should return one method"))))
 
 

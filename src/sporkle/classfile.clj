@@ -1,5 +1,5 @@
-(ns sporkle.classfile
-  (:use [sporkle.core]))
+(ns sporkle.classfile  
+  (:use sporkle.core))
 
 ;; ClassFile {
 ;; 	u4 magic;
@@ -92,12 +92,12 @@
 
   ([bytes]
      ;; I have no idea why the actual count is equal to the count field minus one
-     (read-constant-pool-maplet () (dec (bytes-to-integral-type (take 2 bytes))) (drop 2 bytes)))
+     (read-constant-pool-maplet [] (dec (bytes-to-integral-type (take 2 bytes))) (drop 2 bytes)))
 
   ([acc count bytes]
      (if (= 0 count) [{:constant-pool acc} bytes]
          (let [[entry remaining-bytes] (read-constant-pool-entry bytes)]
-              (recur (cons entry acc) (dec count) remaining-bytes)))))
+              (recur (conj acc entry) (dec count) remaining-bytes)))))
 
 ;; the interface list is a list of byte pairs, interpreted as indexes into the constant pool
 ;; FIXME this needs an individual unit test (not just in test-read-java-class)
@@ -105,11 +105,11 @@
   "Return a map containing the key :interfaces, and a seq of interface references. Conforms to the expectations of read-stream-maplets."
 
   ([bytes]
-     (read-interface-list-maplet () (bytes-to-integral-type (take 2 bytes)) (drop 2 bytes)))
+     (read-interface-list-maplet [] (bytes-to-integral-type (take 2 bytes)) (drop 2 bytes)))
   
   ([acc count bytes]
      (if (= 0 count) [{:interfaces acc} bytes]
-         (recur (cons (take 2 bytes) acc) (dec count) (drop 2 bytes)))))
+         (recur (conj acc (take 2 bytes)) (dec count) (drop 2 bytes)))))
 
 
 (defn read-attribute [bytes]
@@ -117,18 +117,17 @@
     [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
 
 
-;; IMPLEMENT ME
 (defn read-attributes-maplet
 
   ([bytes]
      
      (let [count (bytes-to-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
-       (read-attributes-maplet () count remainder)))
+       (read-attributes-maplet [] count remainder)))
 
   ([acc count bytes]
      (if (zero? count) [{:attributes acc} bytes]
          (let [[attr remainder] (read-attribute bytes)]
-           (recur (cons attr acc) (dec count) remainder)))))
+           (recur (conj acc attr) (dec count) remainder)))))
 
 
 (defn read-field-descriptor [bytes]
@@ -137,18 +136,37 @@
     read-attributes-maplet]
    bytes))
 
-
-;; IMPLEMENT ME
 (defn read-field-list-maplet
 
   ([bytes]
      (let [count (bytes-to-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
-       (read-field-list-maplet () count remainder)))
+       (read-field-list-maplet [] count remainder)))
 
   ([acc count bytes]
      (if (zero? count) [{:fields acc} bytes]
          (let [[field remainder] (read-field-descriptor bytes)]
-           (recur (cons field acc) (dec count) remainder)))))
+           (recur (conj acc field) (dec count) remainder)))))
+
+
+
+(defn read-method-info [bytes]
+  (read-stream-maplets
+   [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
+    read-attributes-maplet]
+   bytes))
+
+
+(defn read-method-list-maplet
+  
+  ([bytes]
+     (let [count (bytes-to-integral-type (take 2 bytes)) rest (drop 2 bytes)]
+       (read-method-list-maplet () count rest)))
+
+  ([acc count bytes]
+     (if (zero? count) [{:methods acc} bytes]
+         (let [[method-info remainder] (read-method-info bytes)]
+           (recur (conj acc method-info) (dec count) remainder)))))
+
 
 ;; the overall stream-to-class function
 (defn read-java-class [bytes]
@@ -159,5 +177,8 @@
      read-constant-pool-maplet
      #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
      read-interface-list-maplet
-     read-field-list-maplet]
+     read-field-list-maplet
+     read-method-list-maplet
+     read-attributes-maplet
+     ]
     bytes)))
