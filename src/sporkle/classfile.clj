@@ -145,3 +145,26 @@
      #(read-struct-list-maplet :methods    read-field-or-method-info %)
      read-attributes-maplet]
     bytes)))
+
+;; and now some classfile byte extraction goodness
+
+;; this is necessary for two reasons
+;; 1) The indices are 1-based!
+;; 2) Some constant pool entries count for two!
+;;
+;; therefore, this implementation WILL change
+(defn get-constant [java-class index]
+  (nth (:constant-pool java-class) (dec index)))
+
+;; extracting useful values from constant pool entries
+
+(defmulti get-value :tag)
+
+(defmethod get-value CONSTANT_Integer [constant]
+  (bytes-to-integral-type (:bytes constant)))
+
+(defmethod get-value CONSTANT_Utf8 [constant]
+  (apply str (map char (:bytes constant))))
+
+(defmethod get-value :default [constant]
+  (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (format "0x%02X" (:tag constant))))))

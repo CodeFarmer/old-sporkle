@@ -163,3 +163,22 @@
       (is (= 2 (count (:methods java-class))) "the class should return one method"))))
 
 
+(comment (deftest test-get-constant))
+
+(deftest test-get-constant-value
+  
+  (testing "reading an integer constant"
+    (let [const {:tag CONSTANT_Integer :bytes [0x00 0x00 0x01 0xFF]}]
+      (is (= 0x0001FF (get-value const)))))
+
+  (testing "reading a utf8 constant"
+
+    ;; FIXME consider not storing length
+   (let [const {:tag CONSTANT_Utf8, :length 6, :bytes [0x3C 0x69 0x6E 0x69 0x74 0x3E]}]
+     (is (= "<init>" (get-value const)))))
+
+  (testing "reading a constant with an unknown tag"
+
+    (let [const {:tag 0x20, :bytes [0x00 0x00]}]
+      (is (thrown? IllegalArgumentException (get-value const)) "Unimplemented constant reader for a tag number should throw an exception"))))
+
