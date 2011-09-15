@@ -4,7 +4,6 @@
   (:use [clojure.test])
   (:require [clojure.java.io :as io]))
 
-;; (deftest read-constant-pool-entry)
 
 (deftest test-read-constant-pool-entry
 
@@ -97,6 +96,29 @@
       (is (= 2 (count attr-list)) "should return two attributes in the list"))
 
     (is (= [0x0B 0x0C] remainder) "should leave the correct remainder")))
+
+
+(deftest test-read-field-or-method-info
+
+  (testing "reading a known field info with 4 trailing bytes"
+
+    (let [[field remainder] (read-field-or-method-info [0x00 0x01 0x00 0x04 0x00 0x05 0x00 0x00 0x00 0x01 0x00 0x06])]
+
+      (is (= [] (:attributes field)) "should have no attributes")
+      (is (= [0x00 0x01] (:access-flags field)) "should select the correct access flag bytes")
+      (is (= [0x00 0x04] (:name-index field)) "should select the correct name index bytes")
+      (is (= [0x00 0x05] (:descriptor-index field)) "should select the correct descriptor-index bytes")
+      (is (= [0x00 0x01 0x00 0x06] remainder) "Should return the correct remainder bytes")))
+  
+  (testing "reading a known method info with 4 trailing bytes"
+    
+    (let [[method remainder] (read-field-or-method-info [0x00 0x01 0x00 0x04 0x00 0x05 0x00 0x01 0x00 0x06 0x00 0x00 0x00 0x1d 0x00 0x01 0x00 0x01 0x00 0x00 0x00 0x05 0x2a 0xb7 0x00 0x01 0xb1 0x00 0x00 0x00 0x01 0x00 0x07 0x00 0x00 0x00 0x06 0x00 0x01 0x00 0x00 0x00 0x01 0x00 0x01 0x00 0x08])]
+      (is (= [0x00 0x01] (:access-flags method)) "should select the correct access flag bytes")
+      (is (= [0x00 0x04] (:name-index method)) "should select the correct name index bytes")
+      (is (= [0x00 0x05] (:descriptor-index method)) "should select the correct descriptor-index bytes")
+      (is (= 1 (count (:attributes method))) "should have one (Code) attribute")
+      (is (= [0x00 0x01 0x00 0x08] remainder) "should return the correct remainder bytes"))))
+
 
 (deftest test-read-java-class
 

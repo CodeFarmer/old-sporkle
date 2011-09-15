@@ -115,14 +115,7 @@
     (read-struct-list-maplet [] count :constant-pool read-constant-pool-entry remainder)))
 
 
-(defn read-field-info [bytes]
-  (read-stream-maplets
-   [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
-    read-attributes-maplet]
-   bytes))
-
-
-(defn read-method-info [bytes]
+(defn read-field-or-method-info [bytes]
   (read-stream-maplets
    [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
     read-attributes-maplet]
@@ -134,6 +127,11 @@
   [(take 2 bytes) (drop 2 bytes)])
 
 
+;; for quick-hack debugging
+(defn -print-some-stream-bytes [bytes]
+  (println (map #(format "0x%02x" %) (take 256 bytes)))
+  [{} bytes])
+
 ;; the overall stream-to-class function
 (defn read-java-class [bytes]
 
@@ -143,7 +141,7 @@
      read-constant-pool-maplet
      #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
      #(read-struct-list-maplet :interfaces read-byte-pair %)
-     #(read-struct-list-maplet :fields     read-field-info %)
-     #(read-struct-list-maplet :methods    read-method-info %)
+     #(read-struct-list-maplet :fields     read-field-or-method-info %)
+     #(read-struct-list-maplet :methods    read-field-or-method-info %)
      read-attributes-maplet]
     bytes)))
