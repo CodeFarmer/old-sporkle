@@ -73,14 +73,14 @@
       )))
 
 
-(comment (deftest test-read-attribute
+(deftest test-read-attribute
 
-    (testing "reading a generic attribute from a byte stream with trailing bytes"
+  (testing "reading a generic attribute from a byte stream with trailing bytes"
 
-      (let [[attr remainder] (read-attribute [0x00 0x01 0x00 0x00 0x00 0x03 0x0A 0x0B 0x0C 0x0D])]
-        (is (= [0x00 0x01] (:attribute-name-index attr)) "first two bytes should be the atribute name index")
-        (is (= [0x0A 0x0B 0x0C] (:info attr)) "info should contain the right three bytes")
-        (is (= [0x0D] remainder) "should correctly leave the remaining byte")))))
+    (let [[attr remainder] (read-attribute [0x00 0x01 0x00 0x00 0x00 0x03 0x0A 0x0B 0x0C 0x0D])]
+      (is (= [0x00 0x01] (:attribute-name-index attr)) "first two bytes should be the atribute name index")
+      (is (= [0x0A 0x0B 0x0C] (:info attr)) "info should contain the right three bytes")
+      (is (= [0x0D] remainder) "should correctly leave the remaining byte"))))
 
 
 (deftest test-read-attributes-maplet
