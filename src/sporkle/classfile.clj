@@ -85,68 +85,41 @@
 (defmethod read-constant-pool-entry :default [bytes]
   (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (format "0x%02X" (first bytes))))))
 
-;;
-
-(defn read-constant-pool-maplet
-  "Return a map containing the key :constant-pool, and a seq of constant pool entries. Conforms to the expectations of read-stream-maplets."
-
-  ([bytes]
-     ;; I have no idea why the actual count is equal to the count field minus one
-     (read-constant-pool-maplet [] (dec (bytes-to-integral-type (take 2 bytes))) (drop 2 bytes)))
-
-  ([acc count bytes]
-     (if (= 0 count) [{:constant-pool acc} bytes]
-         (let [[entry remaining-bytes] (read-constant-pool-entry bytes)]
-              (recur (conj acc entry) (dec count) remaining-bytes)))))
-
-;; the interface list is a list of byte pairs, interpreted as indexes into the constant pool
-;; FIXME this needs an individual unit test (not just in test-read-java-class)
-(defn read-interface-list-maplet
-  "Return a map containing the key :interfaces, and a seq of interface references. Conforms to the expectations of read-stream-maplets."
-
-  ([bytes]
-     (read-interface-list-maplet [] (bytes-to-integral-type (take 2 bytes)) (drop 2 bytes)))
-  
-  ([acc count bytes]
-     (if (= 0 count) [{:interfaces acc} bytes]
-         (recur (conj acc (take 2 bytes)) (dec count) (drop 2 bytes)))))
-
 
 (defn read-attribute [bytes]
   (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
     [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
 
 
-(defn read-attributes-maplet
+(defn read-struct-list-maplet
 
-  ([bytes]
-     
+  ([key readfn bytes]
+
      (let [count (bytes-to-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
-       (read-attributes-maplet [] count remainder)))
+       (read-struct-list-maplet [] count key readfn remainder)))
 
-  ([acc count bytes]
-     (if (zero? count) [{:attributes acc} bytes]
-         (let [[attr remainder] (read-attribute bytes)]
-           (recur (conj acc attr) (dec count) remainder)))))
+  ([acc count key readfn bytes]
+     (if (zero? count) [{key acc} bytes]
+         (let [[descriptor remainder] (readfn bytes)]
+           (recur (conj acc descriptor) (dec count) key readfn remainder)))))
 
 
-(defn read-field-descriptor [bytes]
+;; this one comes up a few times
+(defn read-attributes-maplet [bytes]
+  (read-struct-list-maplet :attributes read-attribute bytes))
+
+
+;; the constant pool, annoyingly, has a different way of expressing its length than every other struct list
+(defn read-constant-pool-maplet [bytes]
+  (let [count (dec (bytes-to-integral-type (take 2 bytes))) remainder (drop 2 bytes)]
+    (read-struct-list-maplet [] count :constant-pool read-constant-pool-entry remainder)))
+
+
+(defn read-field-info [bytes]
   (read-stream-maplets
    [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
     read-attributes-maplet]
    bytes))
-
-(defn read-field-list-maplet
-
-  ([bytes]
-     (let [count (bytes-to-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
-       (read-field-list-maplet [] count remainder)))
-
-  ([acc count bytes]
-     (if (zero? count) [{:fields acc} bytes]
-         (let [[field remainder] (read-field-descriptor bytes)]
-           (recur (conj acc field) (dec count) remainder)))))
-
 
 
 (defn read-method-info [bytes]
@@ -156,16 +129,9 @@
    bytes))
 
 
-(defn read-method-list-maplet
-  
-  ([bytes]
-     (let [count (bytes-to-integral-type (take 2 bytes)) rest (drop 2 bytes)]
-       (read-method-list-maplet () count rest)))
-
-  ([acc count bytes]
-     (if (zero? count) [{:methods acc} bytes]
-         (let [[method-info remainder] (read-method-info bytes)]
-           (recur (conj acc method-info) (dec count) remainder)))))
+;; an interface index is just a byte pair
+(defn read-byte-pair [bytes]
+  [(take 2 bytes) (drop 2 bytes)])
 
 
 ;; the overall stream-to-class function
@@ -176,9 +142,8 @@
     [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
      read-constant-pool-maplet
      #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
-     read-interface-list-maplet
-     read-field-list-maplet
-     read-method-list-maplet
-     read-attributes-maplet
-     ]
+     #(read-struct-list-maplet :interfaces read-byte-pair %)
+     #(read-struct-list-maplet :fields     read-field-info %)
+     #(read-struct-list-maplet :methods    read-method-info %)
+     read-attributes-maplet]
     bytes)))
