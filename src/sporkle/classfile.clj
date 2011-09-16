@@ -156,15 +156,3 @@
 (defn get-constant [java-class index]
   (nth (:constant-pool java-class) (dec index)))
 
-;; extracting useful values from constant pool entries
-
-(defmulti get-value :tag)
-
-(defmethod get-value CONSTANT_Integer [constant]
-  (bytes-to-integral-type (:bytes constant)))
-
-(defmethod get-value CONSTANT_Utf8 [constant]
-  (apply str (map char (:bytes constant))))
-
-(defmethod get-value :default [constant]
-  (throw (IllegalArgumentException. (str "Unhandled constant pool tag " (format "0x%02X" (:tag constant))))))
