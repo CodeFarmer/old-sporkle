@@ -133,9 +133,9 @@
       (let [access-flags (:access-flags java-class)]
         (is (= (bit-or ACC_PUBLIC ACC_SUPER) access-flags) "class should be public with no other modifiers (except the fearsome ACC_SUPER)"))
 
-      (comment "These next two need to be reworked")
-      (is (= 2 (count (:this-class java-class))) "should have two bytes for its this-class constant reference")
-      (is (= 2 (count (:super-class java-class))) "should have two bytes for its superclass constant reference")
+      (comment "These next two need to be reworked"
+               (is (= 2 (count (:this-class java-class))) "should have two bytes for its this-class constant reference")
+               (is (= 2 (count (:super-class java-class))) "should have two bytes for its superclass constant reference"))
       
       ;; and the interfaces...
       (is (= 0 (count (:interfaces java-class))) "should have no interfaces, because it's so simple")

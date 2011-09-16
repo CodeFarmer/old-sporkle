@@ -62,11 +62,11 @@
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-integral-type (take 2 rest))]
-      [{:tag tag :length length :bytes (take length (drop 2 rest))}
+      [{:tag tag :value (apply str (map char (take length (drop 2 rest))))}
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
-  (unpack-struct [[:tag 1] [:bytes 4]] bytes))
+  (unpack-struct [[:tag 1] [:value 4]] bytes))
 
 ; NOTE these next three are the same at the moment but that will change
 (defmethod read-constant-pool-entry CONSTANT_Methodref [bytes]
@@ -87,7 +87,7 @@
 
 
 (defn read-attribute [bytes]
-  (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
+  (let [name-index (bytes-to-integral-type (take 2 bytes)) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
     [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
 
 
@@ -150,7 +150,7 @@
 
 ;; this is necessary for two reasons
 ;; 1) The indices are 1-based!
-;; 2) Some constant pool entries count for two!
+;; 2) Some constant pool entries count for two spaces!
 ;;
 ;; therefore, this implementation WILL change
 (defn get-constant [java-class index]

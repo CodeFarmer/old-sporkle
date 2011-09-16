@@ -26,7 +26,7 @@
 
 
 (defn unpack-struct
-  "Given a list of pairs of [:key integer] and a seq, return a vec containing 1) the unused portion of the seq and 2) a map whose keys are all the keys from the pairs, plus seqs of n consecutive items from aseq each (in the order they appear in avec).
+  "Given a list of pairs of [:key integer] and a seq, return a vec containing 1) a map whose keys are all the keys from the pairs, plus integers (or longs or bigs) made of from the requisite numbers of bytes from aseq each (in the order they appear in avec), and 2) the remainder of the seq.
 
 Partial applications conform to the expectations of read-stream-maplets."
   
@@ -38,8 +38,7 @@ Partial applications conform to the expectations of read-stream-maplets."
        (cond
         (nil? field-key) [amap aseq] ;; this is the return value
         (< field-size (count field-data)) (throw (IndexOutOfBoundsException. (str "Ran out of stream unpacking struct field " field-key ", needed " field-size ", got " field-data)))
-        (= 1 field-size) (recur (assoc amap field-key (first field-data)) (rest avec) (rest aseq))
-        :else (recur (assoc amap field-key field-data) (rest avec) (drop field-size aseq))))))
+        :else (recur (assoc amap field-key (bytes-to-integral-type field-data)) (rest avec) (drop field-size aseq))))))
 
 
 ;; Dammit the threading macro is *so* close to what I need
