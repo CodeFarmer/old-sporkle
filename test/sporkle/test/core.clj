@@ -20,19 +20,28 @@
       (is (nil? (bytes-to-integral-type ()))))
     (testing "given four bytes"
       (let [b4 (bytes-to-integral-type [0 0 0 4])]
-        (is (= java.lang.Integer (type b4)) "should return an integer")
+        (is (= java.lang.Long (type b4)) "should return a boxed long")
         (is (= 4 b4) "should return the correct low byte number"))
       (let [b (bytes-to-integral-type [0x00 0x00 0x01 0x00])]
         (is (= 0x00000100 b) "should return the correct 3rd-byte integer"))
       (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A])]
-        (is (= java.lang.Integer (type b)) "should return an integer, as long as it doesn't trip the sign bit")
-        (is (= 0x0912F42A) "should return the correct multi-byte integer")))
+        (is (= java.lang.Long (type b)) "should return a long")
+        (is (= 0x0912F42A) "should return the correct multi-byte integer"))
+      (let [b (bytes-to-integral-type [0x08 0x00 0x00 0x01])]
+        (is (= java.lang.Long (type b)) "should return a long")
+        (is (= -1 b) "should return the correct signed integer")))
+  
     (testing "given eight bytes"
-      (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
-        (is (= java.lang.Long (type b)) "should return a long, as long as it doesn't trip the sign bit :(")
-        (is (= 653853357300184066 b)) "should return the correct multi-byte long")
+      (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x02])]
+        (is (= java.lang.Long (type b)) "should return a long")
+        (is (= 653853357300184066 b)) "should return the correct multi-byte long"))
+    
+    (testing "Clojure 1.3 behavior"
+      (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x01])]
+        (is (= java.lang.Long (type b)) "should return a long")
+        (is (= -1 b)) "should return the correctly signed long")
       (let [b (bytes-to-integral-type [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
-        (is (= java.math.BigInteger (type b)) "should overflow into BigInteger when bigger than Long.MAX_VALUE")))))
+        (is (= java.lang.Long (type b)) "should not overflow into BigInteger even when bigger than Long.MAX_VALUE")))))
 
 
 (deftest test-unpack-struct
