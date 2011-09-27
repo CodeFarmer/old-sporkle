@@ -22,38 +22,38 @@
 
 ;; access flags
 
-(def ACC_PUBLIC	      0x0001) ;; Class, method: may be accessed from outside its package.
-(def ACC_PRIVATE      0x0002) ;; Class, method: accessible only within the defining class.
-(def ACC_PROTECTED    0x0004) ;; Method: may be accessed within subclasses. method
-(def ACC_STATIC       0x0008) ;; Method
+(def ^:const ACC_PUBLIC	      0x0001) ;; Class, method: may be accessed from outside its package.
+(def ^:const ACC_PRIVATE      0x0002) ;; Class, method: accessible only within the defining class.
+(def ^:const ACC_PROTECTED    0x0004) ;; Method: may be accessed within subclasses. method
+(def ^:const ACC_STATIC       0x0008) ;; Method
 
-(def ACC_FINAL	      0x0010) ;; Class: no subclasses allowed. Method: may not be overridden
+(def ^:const ACC_FINAL	      0x0010) ;; Class: no subclasses allowed. Method: may not be overridden
 
 ; beware shared flag value
-(def ACC_SUPER	      0x0020) ;; Class: treat superclass methods specially when invoked by the invokespecial instruction.
-(def ACC_SYNCHRONIZED 0x0020) ;; Method: invocation is wrapped in a monitor lock.
+(def ^:const ACC_SUPER	      0x0020) ;; Class: treat superclass methods specially when invoked by the invokespecial instruction.
+(def ^:const ACC_SYNCHRONIZED 0x0020) ;; Method: invocation is wrapped in a monitor lock.
 
-(def ACC_NATIVE       0x0100) ;; Method: native method.
-(def ACC_INTERFACE    0x0200) ;; Class: is an interface, not a class.
-(def ACC_ABSTRACT     0x0400) ;; Class: may not be instantiated. Method: no implementation is provided
-(def ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
+(def ^:const ACC_NATIVE       0x0100) ;; Method: native method.
+(def ^:const ACC_INTERFACE    0x0200) ;; Class: is an interface, not a class.
+(def ^:const ACC_ABSTRACT     0x0400) ;; Class: may not be instantiated. Method: no implementation is provided
+(def ^:const ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
 ;; constant pool entries
 
-(def CONSTANT_Class               7)
-(def CONSTANT_Fieldref	          9)
-(def CONSTANT_Methodref	         10)
-(def CONSTANT_InterfaceMethodref 11)
-(def CONSTANT_String              8)
+(def ^:const CONSTANT_Class               7)
+(def ^:const CONSTANT_Fieldref	          9)
+(def ^:const CONSTANT_Methodref	         10)
+(def ^:const CONSTANT_InterfaceMethodref 11)
+(def ^:const CONSTANT_String              8)
 
-(def CONSTANT_Integer             3)
-(def CONSTANT_Float               4)
-(def CONSTANT_Long                5)
-(def CONSTANT_Double              6)
+(def ^:const CONSTANT_Integer             3)
+(def ^:const CONSTANT_Float               4)
+(def ^:const CONSTANT_Long                5)
+(def ^:const CONSTANT_Double              6)
 
-(def CONSTANT_NameAndType        12)
-(def CONSTANT_Utf8                1)
+(def ^:const CONSTANT_NameAndType        12)
+(def ^:const CONSTANT_Utf8                1)
 
 ;; conforms to the expectations of read-stream-maplets
 ;; FIXME document this
@@ -66,6 +66,7 @@
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
+  ;; unpack-signed-struct?
   (unpack-struct [[:tag 1] [:value 4]] bytes))
 
 ; NOTE these next three are the same at the moment but that will change
