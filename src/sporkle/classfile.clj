@@ -138,7 +138,7 @@
 
   (first
    (read-stream-maplets
-    [#(unpack-struct [[:magic 4] [:minor-version 2] [:major-version 2]] %)
+    [#(unpack-struct [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]] %)
      read-constant-pool-maplet
      #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
      #(read-struct-list-maplet :interfaces read-byte-pair %)

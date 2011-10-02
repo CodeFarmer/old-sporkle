@@ -15,9 +15,12 @@
 
 ;; TODO this currently ignores sign! Java doesn't... ;)
 (deftest test-bytes-to-integral-type
+  
   (testing "bytes-to-integral-type"
+
     (testing "given no bytes"
       (is (nil? (bytes-to-integral-type ()))))
+
     (testing "given four bytes"
       (let [b4 (bytes-to-integral-type [0 0 0 4])]
         (is (= java.lang.Long (type b4)) "should return a boxed long")
@@ -27,7 +30,7 @@
       (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A])]
         (is (= java.lang.Long (type b)) "should return a long")
         (is (= 0x0912F42A) "should return the correct multi-byte integer"))
-      (let [b (bytes-to-integral-type [0x08 0x00 0x00 0x01])]
+      (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x01])]
         (is (= java.lang.Long (type b)) "should return a long")
         (is (= -1 b) "should return the correct signed integer")))
   
@@ -50,7 +53,7 @@
 
     (let [[java-class remainder]
           (unpack-struct
-            [[:magic 4] [:minor-version 2] [:major-version 2]]
+            [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]]
             [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32  0x00 0x0D 0x0A 0x00])]
       (is (= (:magic java-class) 0xCAFEBABE) "first 4 bytes should be 0xCAFEBABE")
       (is (= (:minor-version java-class) 0x0000) "Next two bytes are the minor version, set to 0x0000")
