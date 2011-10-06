@@ -1,7 +1,7 @@
 (ns sporkle.bytecode)
 
 ;; this is lifted verbatim frrom Pork's jopcode.py... unfortunately I can't use that to wiggle out from mistakes, because I wrote that too :(
-(def #^const OPCODES
+(def ^:const OPCODES
   [
    ;; [:name opcode argwidth stack-delta]
    [:aaload          0x32 0 -1]
@@ -139,26 +139,26 @@
    [:ifnull          0xc6 2 -1]
    [:iinc            0x84 2  0]
    ;; iload
-   [:iload           0x15 1  1] # wide allowed
-   [:iload_0         0x1a 0  1] # wide allowed
-   [:iload_1         0x1b 0  1] # wide allowed
-   [:iload_2         0x1c 0  1] # wide allowed
-   [:iload_3         0x1d 0  1] # wide allowed
+   [:iload           0x15 1  1] ; wide allowed
+   [:iload_0         0x1a 0  1] ; wide allowed
+   [:iload_1         0x1b 0  1] ; wide allowed
+   [:iload_2         0x1c 0  1] ; wide allowed
+   [:iload_3         0x1d 0  1] ; wide allowed
    [:imul            0x68 0 -1]
    [:ineg            0x74 0  0]
    [:instanceof      0xc1 2  0]
    ;; FIXME stack pop count for args also rule that operand 3 must be zero?
-   [:invokeinterface 0xb9 4  None]
+   [:invokeinterface 0xb9 4  nil]
    ;; FIXME stack pop count for args
-   [:invokespecial   0xb7 2  None]
+   [:invokespecial   0xb7 2  nil]
    ;; FIXME stack pop count for args
-   [:invokestatic    0xb8 2  None]
+   [:invokestatic    0xb8 2  nil]
    ;; FIXME stack pop count for args
-   [:invokevirtual   0xb6 2  None]
+   [:invokevirtual   0xb6 2  nil]
    [:ior             0x80 0 -1]
    [:irem            0x70 0 -1]
    ;; What happens if theres a float on the stack instead? Find out.
-   [:ireturn         0xac 0 -1] # return int
+   [:ireturn         0xac 0 -1] ; return int
    [:ishl            0x78 0 -1]
    [:ishr            0x7a 0 -1]
    
@@ -197,7 +197,7 @@
    [:lmul            0x69 0 -2]
    [:lneg            0x75 0  0]
    ;; TODO figure out how to implement lookupswitch.
-   ;; [:lookupswitch 0xab None -1]
+   ;; [:lookupswitch 0xab nil -1]
    [:lor             0x81 0 -2]
    [:lrem            0x71 0 -2]
    ;; TODO returns clear stack ignore their deltas or..?
@@ -234,3 +234,11 @@
    [:sipush          0x11 2  1]
    [:swap            0x5f 0  0] ; note lack of swap2
    ])
+
+(def bytes-to-opcodes)
+
+(def syms-to-opcodes
+  (apply hash-map (interleave (map first OPCODES) OPCODES)))
+
+(def bytes-to-opcodes
+  (apply hash-map (interleave (map second OPCODES) OPCODES)))
