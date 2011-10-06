@@ -153,7 +153,21 @@
 ;; 1) The indices are 1-based!
 ;; 2) Some constant pool entries count for two spaces!
 ;;
-;; therefore, this implementation WILL change
+;; therefore, this implementation WILL change - it is WRONG right now
 (defn get-constant [java-class index]
   (nth (:constant-pool java-class) (dec index)))
 
+(defn get-name [java-class thing]
+  "Return a string representing the Utf8 constant pointed to by thing's :name-index field (for example, a method_info)."
+  (:value (get-constant java-class (:name-index thing))))
+
+;; FIXME everything below needs a test
+
+(defn constant-index [constant-pool tag value]
+  "find the index into the constant pool pointing to an entry containing value"
+  (when-let [with-index (some #(and (= tag (:tag (first %))) (= value (:value (first %)))) (each-with-index constant-pool))]
+    (second with-index)))
+
+;; convenience fn, have a feeling we'll be calling it a bit
+(defn utf8-index [constant-pool value]
+  (constant-index constant-pool CONSTANT_Utf8 value))

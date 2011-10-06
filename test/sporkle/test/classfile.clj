@@ -164,3 +164,7 @@
 
       (is (= 2 (count (:methods java-class))) "the class should return one method"))))
 
+;; information about fields or methods or... anything with a :name-index
+(deftest test-get-name
+  (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+    (is (= "<init>" (get-name java-class (first (:methods java-class)))))))
