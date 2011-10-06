@@ -83,3 +83,6 @@
         (is (= (:f amap) 1)     "should read f first")
         (is (= (:g amap) 4)     "should read g third")
         (is (= (:h amap) [2 3]) "should read h second")))))
+
+(deftest test-each-with-index
+  (is (= [[:a 0] [:b 1] [nil 2] [:c 3]] (each-with-index [:a :b nil :c]))))

@@ -78,3 +78,8 @@ Returns a pair [map, remainder], so it can nest within itself"
        (if (nil? f) [acc bytes]
            (let [[maplet remainder] (f bytes)]
              (recur (merge acc maplet) (rest funcs) remainder))))))
+
+;; FIXME write a test
+(defn each-with-index [aseq]
+  "Given a seq, return a seq of pairs (vectors) containing the elements of the seq, and the index at which they appear"
+  (map vector aseq (iterate inc 0)))
