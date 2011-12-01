@@ -173,3 +173,14 @@
 (defn utf8-index [constant-pool value]
   (constant-index constant-pool CONSTANT_Utf8 value)
   )
+
+;; for something with a name-index, get its name
+(defn get-name [java-class thing]
+  "For anything that has a name-index in its struct, return the string represented in the class by that name-index"
+  (:value (get-constant java-class (:name-index thing))))
+
+(defn get-descriptor [java-class meth]
+  "Return the descriptor string for a method (or anything else with a descriptor-index"
+  (:value (get-constant java-class (:descriptor-index meth))))
+
+
