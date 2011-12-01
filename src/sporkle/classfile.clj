@@ -1,5 +1,6 @@
 (ns sporkle.classfile  
-  (:use sporkle.core))
+  (:use sporkle.core)
+  (:require [clojure.string :as str]))
 
 ;; ClassFile {
 ;; 	u4 magic;
@@ -62,7 +63,7 @@
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-integral-type (take 2 rest))]
-      [{:tag tag :value (apply str (map char (take length (drop 2 rest))))}
+      [{:tag tag :value (str/join (map char (take length (drop 2 rest))))}
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
@@ -165,9 +166,10 @@
 
 (defn constant-index [constant-pool tag value]
   "find the index into the constant pool pointing to an entry containing value"
-  (when-let [with-index (some #(and (= tag (:tag (first %))) (= value (:value (first %)))) (each-with-index constant-pool))]
-    (second with-index)))
+  (when-let [with-index (some #(if (and (= tag (:tag (first %))) (= value (:value (first %)))) %) (each-with-index constant-pool))]
+    (inc (second with-index)))) ; constant pool indices start at 1
 
 ;; convenience fn, have a feeling we'll be calling it a bit
 (defn utf8-index [constant-pool value]
-  (constant-index constant-pool CONSTANT_Utf8 value))
+  (constant-index constant-pool CONSTANT_Utf8 value)
+  )

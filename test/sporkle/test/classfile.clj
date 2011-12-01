@@ -168,3 +168,12 @@
 (deftest test-get-name
   (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))))
+
+(deftest test-get-constant-index
+  (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+    (is (nil? (constant-index (:constant-pool java-class) CONSTANT_Utf8 "not-a-real-string")) "should return nil when the specified constant is not present")
+    (is (= 4 (constant-index (:constant-pool java-class) CONSTANT_Utf8 "<init>")) "should return 4 when looking for init method's name in otherwise empty class")))
+
+(deftest test-get-method-signature
+  (is (= 1 0)))
+
