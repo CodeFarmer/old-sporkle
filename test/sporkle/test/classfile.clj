@@ -19,9 +19,9 @@
           "should correctly return the remaining bytes")
       (is (= CONSTANT_Utf8 (:tag entry))
           "should correctly set the tag")
-      (is (= 12 (count (:value entry)))
+      (is (= 12 (count (:bytes entry)))
           "should read the two-byte length correctly")
-      (is (= "Nothing.java" (:value entry))
+      (is (= "Nothing.java" (constant-value entry nil))
           "should give us back bytes that can be turned into a Java String")))
   
   (testing "Reading an integer constant, with a trailing byte"
@@ -29,7 +29,7 @@
     (let [[entry rest] (read-constant-pool-entry [0x03 0x00 0x10 0x01 0x01 0xFF])]
       
       (is (= [0xFF] rest)                          "should correctly return the remaining bytes")
-      (is (= 0x00100101 (:value entry)) "should the two btes into an integer")))
+      (is (= 0x00100101 (constant-value entry nil))            "should the two bytes into an integer")))
 
   (testing "reading a method ref entry, with a trailing byte"
 
@@ -168,11 +168,6 @@
 (deftest test-get-name
   (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))))
-
-(deftest test-get-constant-index
-  (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
-    (is (nil? (constant-index (:constant-pool java-class) CONSTANT_Utf8 "not-a-real-string")) "should return nil when the specified constant is not present")
-    (is (= 4 (constant-index (:constant-pool java-class) CONSTANT_Utf8 "<init>")) "should return 4 when looking for init method's name in otherwise empty class")))
 
 (deftest test-getters
   (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
