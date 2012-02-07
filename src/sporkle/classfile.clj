@@ -63,12 +63,11 @@
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-integral-type (take 2 rest))]
-      [{:tag tag :bytes (take length (drop 2 rest))}
+      [{:tag [tag] :bytes (take length (drop 2 rest))}
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
-  ;; consider generalising this like unpack-struct
-  [{:tag (first bytes) :bytes (take 4 (drop 1 bytes))} (drop 5 bytes)])
+  (unpack-struct [[:tag 1] [:bytes 4]] bytes))
 
 ; NOTE these next three are the same at the moment but that will change
 (defmethod read-constant-pool-entry CONSTANT_Methodref [bytes]
@@ -88,8 +87,6 @@
   (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))
 
 ;; getting constant values usefully
-(defmulti get-constant-value :tag)
-(defmethod get-constant-value CONSTANT_Utf8 [constant-value])
 
 (defn read-attribute [bytes]
   (let [name-index (bytes-to-integral-type (take 2 bytes)) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
@@ -153,8 +150,14 @@
 
 ;; and now some classfile byte extraction goodness
 
+(defn tag [unpacked-struct]
+  (bytes-to-integral-type (:tag unpacked-struct)))
+
+(defn access-flags [unpacked-struct]
+  (bytes-to-integral-type (:access-flags unpacked-struct)))
+
 ;; pass the constant pool, as some things evaluate to indices into it which should be followed
-(defmulti constant-value :tag)
+(defmulti constant-value #(tag %2))
 
 ;; it would be nice to be able to this,
 ;; for the case when you know you won't need to follow references - that is, primitives and
@@ -162,13 +165,13 @@
 ;; (defn constant-value [pool-entry]
 ;;  (constant-value pool-entry nil))
 
-(defmethod constant-value CONSTANT_Utf8 [pool-entry constant-pool]
+(defmethod constant-value CONSTANT_Utf8 [java-class pool-entry]
   (str/join (map char (:bytes pool-entry))))
 
-(defmethod constant-value CONSTANT_Integer [pool-entry constant-pool]
+(defmethod constant-value CONSTANT_Integer [java-class pool-entry]
   (bytes-to-integral-type (:bytes pool-entry)))
 
-(defmethod constant-value :default [pool-entry constant-pool]
+(defmethod constant-value :default [java-class pool-entry]
   (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
 
 ;; this is necessary for two reasons
@@ -179,19 +182,16 @@
 (defn get-constant [java-class index]
   (nth (:constant-pool java-class) (dec index)))
 
+;; for something with a name-index, get its name
 (defn get-name [java-class thing]
-  "Return a string representing the Utf8 constant pointed to by thing's :name-index field (for example, a method_info)."
-  (:value (get-constant java-class (:name-index thing))))
+  "For anything that has a name-index in its struct, return the string represented in the class by that name-index
+
+NOTE not called 'name' like the others of its ilk in order not to clash"
+  (constant-value java-class (get-constant java-class (bytes-to-integral-type (:name-index thing)))))
 
 ;; FIXME everything below needs a test
 
-;; for something with a name-index, get its name
-(defn get-name [java-class thing]
-  "For anything that has a name-index in its struct, return the string represented in the class by that name-index"
-  (constant-value (get-constant java-class (:name-index thing)) nil))
-
-(defn get-descriptor [java-class meth]
+(defn descriptor [java-class meth]
   "Return the descriptor string for a method (or anything else with a descriptor-index"
-  (constant-value (get-constant java-class (:descriptor-index meth)) nil))
-
+  (constant-value java-class (get-constant java-class (bytes-to-integral-type (:descriptor-index meth)))))
 

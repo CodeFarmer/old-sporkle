@@ -43,11 +43,9 @@
 
 
 (defn unpack-struct
-  "Given a list of [:key integer & flags] and a seq, return a vec containing 1) a map whose keys are all the keys from the pairs, plus integers (or longs or bigs) made of from the requisite numbers of bytes from aseq each (in the order they appear in avec), and 2) the remainder of the seq.
+  "Given a list of [:key integer] and a seq, return a vec containing 1) a map whose keys are all the keys from the pairs, plus seqs made of from the requisite numbers of bytes from aseq each (in the order they appear in avec), and 2) the remainder of the seq.
 
-Partial applications conform to the expectations of read-stream-maplets.
-
-As yet, the only flag that is defined is :unsigned, which does what you would expect"
+Partial applications conform to the expectations of read-stream-maplets."
   
   ([avec aseq]
      (unpack-struct {} avec aseq))
@@ -55,13 +53,12 @@ As yet, the only flag that is defined is :unsigned, which does what you would ex
   ([amap avec aseq]
      
      (let [[field-key field-size & flags] (first avec)
-           field-data (take field-size aseq)
-           convert-fn (if (some #(= :unsigned %) flags) bytes-to-unsigned-integral-type bytes-to-integral-type)]
+           field-data (take field-size aseq)]
        
        (cond
         (nil? field-key) [amap aseq] ;; this is the return value
         (< field-size (count field-data)) (throw (IndexOutOfBoundsException. (str "Ran out of stream unpacking struct field " field-key ", needed " field-size ", got " field-data)))
-        :else (recur (assoc amap field-key (convert-fn field-data)) (rest avec) (drop field-size aseq))))))
+        :else (recur (assoc amap field-key field-data) (rest avec) (drop field-size aseq))))))
 
 
 ;; Dammit the threading macro is *so* close to what I need

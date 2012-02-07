@@ -17,40 +17,40 @@
                           
       (is (= [0x0C 0x00 0x04] rest)
           "should correctly return the remaining bytes")
-      (is (= CONSTANT_Utf8 (:tag entry))
+      (is (= CONSTANT_Utf8 (tag entry))
           "should correctly set the tag")
       (is (= 12 (count (:bytes entry)))
           "should read the two-byte length correctly")
-      (is (= "Nothing.java" (constant-value entry nil))
+      (is (= "Nothing.java" (constant-value nil entry))
           "should give us back bytes that can be turned into a Java String")))
   
   (testing "Reading an integer constant, with a trailing byte"
 
     (let [[entry rest] (read-constant-pool-entry [0x03 0x00 0x10 0x01 0x01 0xFF])]
       
-      (is (= [0xFF] rest)                          "should correctly return the remaining bytes")
-      (is (= 0x00100101 (constant-value entry nil))            "should the two bytes into an integer")))
+      (is (= [0xFF] rest)                           "should correctly return the remaining bytes")
+      (is (= 0x00100101 (constant-value nil entry)) "should the two bytes into an integer")))
 
   (testing "reading a method ref entry, with a trailing byte"
 
     (let [[entry rest] (read-constant-pool-entry [0x0A 0x00 0x03 0x00 0x0A])]
-      (is (= CONSTANT_Methodref (:tag entry)) "should record the correct tag")
-      (is (= 0x00003 (:class-index entry)) "should record the class index bytes")
+      (is (= CONSTANT_Methodref (tag entry)) "should record the correct tag")
+      (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
       (comment "FIXME implement more tests for method-ref"))
 
   (testing "reading a field ref entry, with a trailing byte"
 
     (let [[entry rest] (read-constant-pool-entry [0x09 0x00 0x03 0x00 0x0A])]
-      (is (= CONSTANT_Fieldref (:tag entry)) "should record the correct tag")
-      (is (= 0x0003 (:class-index entry)) "should record the class index bytes")
-      (is (= 0x000A (:name-and-type-index entry "should record the name and type index bytes"))))
+      (is (= CONSTANT_Fieldref (tag entry)) "should record the correct tag")
+      (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
+      (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))
 
     (testing "reading an interface method ref entry, with a trailing byte"
 
       (let [[entry rest] (read-constant-pool-entry [0x0B 0x00 0x03 0x00 0x0A])]
-        (is (= CONSTANT_InterfaceMethodref (:tag entry)) "should record the correct tag")
-        (is (= 0x0003 (:class-index entry)) "should record the class index bytes")
-        (is (= 0x000A (:name-and-type-index entry "should record the name and type index bytes"))))))
+        (is (= CONSTANT_InterfaceMethodref (tag entry)) "should record the correct tag")
+        (is (= [0x00 0x03] (:class-index entry)) "should record the class index bytes")
+        (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))))
 
 
   (testing "Reading from a constant with an unknown tag value"
@@ -66,7 +66,7 @@
       (let [pool (:constant-pool constant-pool-maplet)]
         (is (= 12 (count pool)) "should read the right number of constants")
         (is (every? #(contains? % :tag) pool) "should return a seq of objects with tag fields")
-        (is (= 0x0A (:tag (first pool))) "should have the constant pool objects in the right order"))
+        (is (= 0x0A (tag (first pool))) "should have the constant pool objects in the right order"))
       ;; IMPLEMENT ME
       )))
 
@@ -104,17 +104,17 @@
     (let [[field remainder] (read-field-or-method-info [0x00 0x01 0x00 0x04 0x00 0x05 0x00 0x00 0x00 0x01 0x00 0x06])]
 
       (is (= [] (:attributes field)) "should have no attributes")
-      (is (= 0x0001 (:access-flags field)) "should select the correct access flag bytes")
-      (is (= 0x0004 (:name-index field)) "should select the correct name index bytes")
-      (is (= 0x0005 (:descriptor-index field)) "should select the correct descriptor-index bytes")
+      (is (= [0x00 0x01] (:access-flags field)) "should select the correct access flag bytes")
+      (is (= [0x00 0x04] (:name-index field)) "should select the correct name index bytes")
+      (is (= [0x00 0x05] (:descriptor-index field)) "should select the correct descriptor-index bytes")
       (is (= [0x00 0x01 0x00 0x06] remainder) "Should return the correct remainder bytes")))
   
   (testing "reading a known method info with 4 trailing bytes"
     
     (let [[method remainder] (read-field-or-method-info [0x00 0x01 0x00 0x04 0x00 0x05 0x00 0x01 0x00 0x06 0x00 0x00 0x00 0x1d 0x00 0x01 0x00 0x01 0x00 0x00 0x00 0x05 0x2a 0xb7 0x00 0x01 0xb1 0x00 0x00 0x00 0x01 0x00 0x07 0x00 0x00 0x00 0x06 0x00 0x01 0x00 0x00 0x00 0x01 0x00 0x01 0x00 0x08])]
-      (is (= 0x0001 (:access-flags method)) "should select the correct access flag bytes")
-      (is (= 0x0004 (:name-index method)) "should select the correct name index bytes")
-      (is (= 0x0005 (:descriptor-index method)) "should select the correct descriptor-index bytes")
+      (is (= [0x00 0x01] (:access-flags method)) "should select the correct access flag bytes")
+      (is (= [0x00 0x04] (:name-index method)) "should select the correct name index bytes")
+      (is (= [0x00 0x05] (:descriptor-index method)) "should select the correct descriptor-index bytes")
       (is (= 1 (count (:attributes method))) "should have one (Code) attribute")
       (is (= [0x00 0x01 0x00 0x08] remainder) "should return the correct remainder bytes"))))
 
@@ -125,12 +125,12 @@
 
     (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
 
-      (is (= 0xCAFEBABE (:magic java-class)) "gotta get the magic number right")
-      (is (= 0x0000 (:minor-version java-class))   "minor version number of the class file")
-      (is (= 0x0032 (:major-version java-class))   "major version number of the class file")
+      (is (= 0xCAFEBABE (bytes-to-unsigned-integral-type (:magic java-class))) "gotta get the magic number right")
+      (is (= 0x0000 (bytes-to-integral-type (:minor-version java-class)))   "minor version number of the class file")
+      (is (= 0x0032 (bytes-to-integral-type (:major-version java-class)))   "major version number of the class file")
       (is (= 12 (count (:constant-pool java-class)))    "should read the correct number of constant pool entries")
       
-      (let [access-flags (:access-flags java-class)]
+      (let [access-flags (access-flags java-class)]
         (is (= (bit-or ACC_PUBLIC ACC_SUPER) access-flags) "class should be public with no other modifiers (except the fearsome ACC_SUPER)"))
 
       (comment "These next two need to be reworked"
@@ -172,5 +172,5 @@
 (deftest test-getters
   (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))
-    (is (= "()V" (get-descriptor java-class (first (:methods java-class)))))))
+    (is (= "()V" (descriptor java-class (first (:methods java-class)))))))
 
