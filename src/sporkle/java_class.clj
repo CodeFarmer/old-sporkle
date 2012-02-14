@@ -1,21 +1,47 @@
 (ns sporkle.java-class
-  (:use [sporkle.core]))
+  (:use [sporkle.core])
+  (:use [sporkle.classfile]))
 
-(defn java-class [class-name]
-  {:magic         [0xCA 0xFE 0xBA 0xBE]
-   :constant-pool []
-   :methods       []
-   :this-class    [0x00 0x01]})
+
+(defn two-byte-index [i]
+  [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
 
 
 (defn cp-find [constant-pool value-map]
-  "Find the cp-index into constant pool where a constant with particular contents can be found"
+  "Find the cp-index into constant pool where a constant with particular contents can be found (remember, cp-indices start at one and have other potentially annoying behaviour)."
   
-  (let [indexed-cp (each-with-index constant-pool)]
+  (loop [indexed-cp (each-with-index constant-pool)]
+    (if (empty? indexed-cp)
+      nil
+      (let [[c i] (first indexed-cp)]
+        (if (= c value-map)
+          (inc i)
+          (recur (rest indexed-cp)))))))
 
-    ))
+
+(defn include-constant [constant-pool constant-info]
+  (if-let [index (cp-find constant-pool constant-info)]
+    [constant-pool index]
+    [(conj constant-pool constant-info) (+ 1 (count constant-pool))]))
+
 
 ;; cp methods, consider consilidating after you know what shape they are
 (defn cp-add-utf8 [constant-pool string]
   "Given a constant pool and a string, return a vector containing the constant pool with the Utf8 constant, and the cp index"
-  [constant-pool (count constant-pool)])
+  (include-constant constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+
+
+(defn cp-add-class [constant-pool string]
+  
+  "Given a constant pool and a string, return a vector containing the constant pool containing the string as a Utf8 constant and a Class constant whose name-index aligns with it, and the cp index of the class constant"
+  
+  (let [[new-cp idx] (cp-add-utf8 constant-pool string)]
+    (include-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
+
+
+(defn java-class [class-name]
+  (let [[cp idx] (cp-add-class [] class-name)]
+    {:magic         [0xCA 0xFE 0xBA 0xBE]
+     :constant-pool cp
+     :methods       []
+     :this-class    (two-byte-index idx)}))
