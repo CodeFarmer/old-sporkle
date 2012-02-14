@@ -144,6 +144,8 @@
       (is (not (nil? (:fields java-class))) "should still have something in the fields field though")
       (is (= 1 (count (:methods java-class))) "should have one method (<init>")
       (is (not (nil? (:methods java-class))) "should still have something in the method fields")
+
+      (is (= "Nothing" (class-name java-class)) "should be able to retrieve the class name")
       ))
   
   (testing "reading a Java class with some marker interfaces"

@@ -184,10 +184,13 @@
 
 ;; for something with a name-index, get its name
 (defn get-name [java-class thing]
-  "For anything that has a name-index in its struct, return the string represented in the class by that name-index
+  "For anything that has a name-index in its struct, return the string represented in the class by that name-index. If no name-index, return nil.
 
 NOTE not called 'name' like the others of its ilk in order not to clash"
-  (constant-value java-class (get-constant java-class (bytes-to-integral-type (:name-index thing)))))
+
+  (if (nil? (:name-index thing))
+    nil
+    (constant-value java-class (get-constant java-class (bytes-to-integral-type (:name-index thing))))))
 
 ;; FIXME everything below needs a test
 
@@ -195,3 +198,8 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   "Return the descriptor string for a method (or anything else with a descriptor-index"
   (constant-value java-class (get-constant java-class (bytes-to-integral-type (:descriptor-index meth)))))
 
+(defn class-name [java-class]
+  (let [this-class (:this-class java-class)]
+    (if (nil? this-class)
+      nil
+      (get-name java-class (get-constant java-class (bytes-to-integral-type (:this-class java-class)))))))
