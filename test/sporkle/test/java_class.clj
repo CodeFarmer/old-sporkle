@@ -6,22 +6,6 @@
   (:use [sporkle.classfile])
   (:require [clojure.java.io :as io]))
 
-(deftest test-minimal-class
-  (testing "that the creation of a minimal class should fill out the required keys in the class-file struct"
-
-    (let [clazz (java-class "Nothing")]
-      (is (map? clazz)
-          "java-class should return a Map")
-      
-      (is (vector? (:constant-pool clazz))
-          "java-class should have a vector constant pool")
-
-      (is (vector? (:methods clazz))
-          "java-class should have a methods vector")
-      
-      (is (not (nil? (:this-class clazz)))
-          "java-class should have a this-class member"))))
-
 
 (deftest test-cp-find
   (testing "With s real class constant pool"
@@ -67,10 +51,57 @@
             "constant should be findable at the end of the pool")))))
 
 
+(deftest test-minimal-class
+  (testing "that the creation of a minimal class should fill out the required keys in the class-file struct"
+
+    (let [clazz (java-class "Nothing")]
+      (is (map? clazz)
+          "java-class should return a Map")
+      
+      (is (vector? (:constant-pool clazz))
+          "java-class should have a vector constant pool")
+
+      (is (vector? (:methods clazz))
+          "java-class should have a methods vector")
+
+      (is (vector? (:interfaces clazz))
+          "java-class should have an interfaces vector")
+
+      (is (vector? (:fields clazz))
+          "java-class should have a fields vector")
+      
+      (is (not (nil? (:this-class clazz)))
+          "java-class should have a this-class member")
+
+      (is (not (nil? (:super-class clazz)))
+          "java-class should have a super-class")
+
+      (is (not (nil? (:major-version clazz)))
+          "java-class should have a format major version")
+
+      (is (not (nil? (:minor-version clazz)))
+          "java-class should have a format minor version")
+
+      (is (= [0xCA 0xFE 0xBA 0xBE] (:magic clazz))
+          "java-class should have the magic number 0xCAFEBABE")
+
+      (is (not (nil? (:access-flags clazz)))
+          "java-class should have some access flags")
+
+      (is (vector? (:attributes clazz))
+          "java-class should have an attributes vector"))))
+
+
 (deftest test-minimal-meaningful-class
   (testing "that the creation of a minimal class should have minimal, self-consistent fields")
 
   (let [clazz (java-class "Nothing")]
 
     (is (= "Nothing" (class-name clazz))
-        "this-class member should correctly resolve to the name")))
+        "this-class member should correctly resolve to the name")
+
+    (is (= "java/lang/Object" (super-class-name clazz))
+        "super-class member should correctly resolve to Object")
+
+    (is (empty? (:fields clazz))
+        "Minimal class should have no fields")))
