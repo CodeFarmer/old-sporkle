@@ -198,8 +198,26 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   "Return the descriptor string for a method (or anything else with a descriptor-index"
   (constant-value java-class (get-constant java-class (bytes-to-integral-type (:descriptor-index meth)))))
 
+
+;; consider making this internal
+(defn indexed-name [java-class index-bytes]
+  "Given a java-class and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
+  (get-name java-class (get-constant java-class (bytes-to-integral-type index-bytes))))
+
+
 (defn class-name [java-class]
   (let [this-class (:this-class java-class)]
     (if (nil? this-class)
       nil
-      (get-name java-class (get-constant java-class (bytes-to-integral-type (:this-class java-class)))))))
+      (indexed-name java-class this-class))))
+
+;; FIXME REFACTOR this is the same as class-name
+(defn super-class-name [java-class]
+  (let [super-class (:super-class java-class)]
+    (if (nil? super-class)
+      nil
+      (indexed-name java-class super-class))))
+
+(defn interface-names [java-class]
+  (map (partial indexed-name java-class) (:interfaces java-class)))
+
