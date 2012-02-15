@@ -176,3 +176,41 @@
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))
     (is (= "()V" (descriptor java-class (first (:methods java-class)))))))
 
+
+(deftest test-unpack-code-attribute
+
+  (testing "Unpacking the code attribute of an empty <init> method in an empty class"
+    
+    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))
+          code-attrib (unpack-code-attribute (attribute-named java-class (first (:methods java-class)) "Code"))]
+
+      (is (not (nil? code-attrib))
+          "Code attribute should not be nil")
+
+      (is (= (:attribute-name-index code-attrib)
+             (cp-find-utf8 (:constant-pool java-class) "Code"))
+          "Code attribute should have name 'Code'")
+
+      (is (= [0x00 0x01] (:max-stack code-attrib))
+          "Code attribute should now have a max-stack field")
+      (is (= [0x00 0x01] (:max-locals code-attrib))
+          "Code attribute should now have a max-locals field")
+
+      (is (coll? (:code code-attrib))
+          "Code attribute should now have a code bytes field")
+      (is (= 5 (count (:code code-attrib)))
+          "Code field should be 5 bytes long")
+
+      (is (coll? (:exception-table code-attrib))
+          "Code attribute should have an exception handler table")
+      (is (empty? (:exception-table code-attrib))
+          "Basic class doesn't have any exception handlers")
+
+      (is (coll? (:attributes code-attrib))
+          "Code attribute should itself have attributes")
+      (is (not (nil? (attribute-named java-class code-attrib "LineNumberTable")))
+          "The code attribute from the example code happens to have a line number table"))))
+
+;; TODO: write a test for line number tables, local variables, exceptions and so on.
+
+

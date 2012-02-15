@@ -58,16 +58,16 @@
       (is (map? clazz)
           "java-class should return a Map")
       
-      (is (vector? (:constant-pool clazz))
+      (is (coll? (:constant-pool clazz))
           "java-class should have a vector constant pool")
 
-      (is (vector? (:methods clazz))
+      (is (coll? (:methods clazz))
           "java-class should have a methods vector")
 
-      (is (vector? (:interfaces clazz))
+      (is (coll? (:interfaces clazz))
           "java-class should have an interfaces vector")
 
-      (is (vector? (:fields clazz))
+      (is (coll? (:fields clazz))
           "java-class should have a fields vector")
       
       (is (not (nil? (:this-class clazz)))
@@ -88,7 +88,7 @@
       (is (not (nil? (:access-flags clazz)))
           "java-class should have some access flags")
 
-      (is (vector? (:attributes clazz))
+      (is (coll? (:attributes clazz))
           "java-class should have an attributes vector"))))
 
 

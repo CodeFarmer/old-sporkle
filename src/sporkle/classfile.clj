@@ -1,5 +1,6 @@
 (ns sporkle.classfile  
   (:use sporkle.core)
+  (:use sporkle.bytecode)
   (:require [clojure.string :as str]))
 
 ;; ClassFile {
@@ -174,6 +175,7 @@
 (defmethod constant-value :default [java-class pool-entry]
   (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
 
+
 ;; this is necessary for two reasons
 ;; 1) The indices are 1-based!
 ;; 2) Some constant pool entries count for two spaces!
@@ -181,6 +183,7 @@
 ;; therefore, this implementation WILL change - it is WRONG right now
 (defn get-constant [java-class index]
   (nth (:constant-pool java-class) (dec index)))
+
 
 ;; for something with a name-index, get its name
 (defn get-name [java-class thing]
@@ -192,7 +195,18 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
     nil
     (constant-value java-class (get-constant java-class (bytes-to-integral-type (:name-index thing))))))
 
-;; FIXME everything below needs a test
+
+;; FIXME everything below needs a test ;; FIXME everything below needs a test
+;; FIXME everything below needs a test ;; FIXME everything below needs a test
+;; FIXME everything below needs a test ;; FIXME everything below needs a test
+;; FIXME everything below needs a test ;; FIXME everything below needs a test
+
+
+(defn read-code-maplet [bytes]
+  (let [count (bytes-to-integral-type (take 4 bytes))
+        info (take count (drop 4 bytes))]
+    [{:code info} (drop (+ 4 count) bytes)]))
+
 
 (defn descriptor [java-class meth]
   "Return the descriptor string for a method (or anything else with a descriptor-index"
@@ -218,6 +232,73 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
       nil
       (indexed-name java-class super-class))))
 
+
 (defn interface-names [java-class]
+  "Return an array of strings that are the qualified classnames of a class' implemented interfaces"
   (map (partial indexed-name java-class) (:interfaces java-class)))
+
+
+(defn cp-find [constant-pool value-map]
+  "Find the cp-index into constant pool where a constant with particular contents can be found (remember, cp-indices start at one and have other potentially annoying behaviour)."
+  
+  (loop [indexed-cp (each-with-index constant-pool)]
+    (if (empty? indexed-cp)
+      nil
+      (let [[c i] (first indexed-cp)]
+        (if (= c value-map)
+          (inc i)
+          (recur (rest indexed-cp)))))))
+
+
+(defn cp-find-utf8 [constant-pool string]
+  "Shortcut to cp-find for UTF-8 strings, which is a very common case"
+  (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+
+
+(defn attribute-named [java-class thing name]
+  "Retrieve the :attributes member of thing whose attribute-name-index corresponds to the location of 'name' in the constant pool of java-class"
+  (when-let [idx (cp-find-utf8 (:constant-pool java-class) name)]
+    (loop [attribs (seq (:attributes thing))]
+      (if (empty? attribs)
+        nil
+        (let [attrib (first attribs)]
+          (if (= idx (:attribute-name-index attrib))
+            attrib
+            (recur (rest attribs))))))))
+
+
+(defn read-exception-table-maplet [bytes]
+  (read-struct-list-maplet :exception-table #(unpack-struct [[:start-pc 2] [:end-pc 2] [:handler-pc 2] [:catch-type 2]] %) bytes))
+
+
+(defn unpack-code-attribute [attribute]
+  "Unpack a code-attribute structure from the info field of a more general attribute (you know you want to do this because you used (get-attribute-named \"Code\"))"
+
+  ;; TODO implement unpacking of LineNumberTable and LocalVariableTable sub-attributes?
+  (into attribute
+    (first
+     (read-stream-maplets
+      [#(unpack-struct [[:max-stack 2] [:max-locals 2]] %)
+       read-code-maplet
+       read-exception-table-maplet
+       read-attributes-maplet]
+       (:info attribute)))))
+
+
+;; dissassembly
+(defn friendly-code
+  ([code-data]
+     "Given the raw bytes of a code attribute, return them as a vector of :opcode keywords with the correct number of integer arguments per opcode"
+
+     (friendly-code [] code-data))
+
+  ([acc code-data]
+
+     (if (empty? code-data)
+       acc
+       (let [opcode-byte (first code-data)
+             remainder   (rest code-data)
+             [opcode-name _ argwidth _] (get bytes-to-opcodes opcode-byte)]
+         
+         (recur (into (conj acc opcode-name) (take argwidth remainder)) (drop argwidth remainder))))))
 
