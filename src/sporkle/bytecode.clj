@@ -233,9 +233,8 @@
    [:sastore         0x56 0 -3]
    [:sipush          0x11 2  1]
    [:swap            0x5f 0  0] ; note lack of swap2
-   ])
+])
 
-(def bytes-to-opcodes)
 
 (def syms-to-opcodes
   (apply hash-map (interleave (map first OPCODES) OPCODES)))
