@@ -131,7 +131,7 @@
       (is (= 12 (count (:constant-pool java-class)))    "should read the correct number of constant pool entries")
       
       (let [access-flags (access-flags java-class)]
-        (is (= (bit-or ACC_PUBLIC ACC_SUPER) access-flags) "class should be public with no other modifiers (except the fearsome ACC_SUPER)"))
+        (is (= ACC_SUPER access-flags) "class have no modifiers (except the fearsome ACC_SUPER)"))
 
       (comment "These next two need to be reworked"
                (is (= 2 (count (:this-class java-class))) "should have two bytes for its this-class constant reference")
