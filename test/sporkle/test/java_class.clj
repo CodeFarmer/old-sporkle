@@ -103,5 +103,14 @@
     (is (= "java/lang/Object" (super-class-name clazz))
         "super-class member should correctly resolve to Object")
 
+    ;; TODO implement write-java-class and find out!
+    ;; NEXT though, implement disassemble-bytecode and look at Nothing.<init>()
+    (comment "Is this strictly necessary?"
+             (is (= 1 (count (:methods clazz)))
+                 "class should exactly have one method"))
+
+    (comment (is (= "<init>" (get-name clazz (first (:methods clazz))))
+                 "class' only method should be a constructor"))
+
     (is (empty? (:fields clazz))
         "Minimal class should have no fields")))
