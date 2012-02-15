@@ -7,18 +7,6 @@
   [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
 
 
-(defn cp-find [constant-pool value-map]
-  "Find the cp-index into constant pool where a constant with particular contents can be found (remember, cp-indices start at one and have other potentially annoying behaviour)."
-  
-  (loop [indexed-cp (each-with-index constant-pool)]
-    (if (empty? indexed-cp)
-      nil
-      (let [[c i] (first indexed-cp)]
-        (if (= c value-map)
-          (inc i)
-          (recur (rest indexed-cp)))))))
-
-
 (defn include-constant [constant-pool constant-info]
   (if-let [index (cp-find constant-pool constant-info)]
     [constant-pool index]
@@ -57,3 +45,4 @@
      :attributes    []
      :this-class    (two-byte-index this-idx)
      :super-class   (two-byte-index super-idx)}))
+
