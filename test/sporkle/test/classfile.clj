@@ -237,6 +237,21 @@
            (seq (.toByteArray (write-class-header stream))))
         "write-class-header should write a valid and correct class header")))
 
+
+
+(deftest test-constant-pool-entry-bytes
+
+  (testing "Utf8 constant"
+    (is (= [1 0 6 60 105 110 105 116 62] (constant-pool-entry-bytes {:tag [1] :bytes [60 105 110 105 116 62]}))
+        "should convert utf8 into tag byte, two-byte index, then content"))
+
+  (testing "integer constant"
+    ;; consider making assertions about incoming field lengths?
+    (is (= [3 24 109 0 1] (constant-pool-entry-bytes {:tag [3] :bytes [24 109 0 1]}))
+        "should convert integer simply as a tag and the four bytes")))
+
+
+
 (comment (deftest test-write-class
            (testing "Reading a class produced by javac and writing it back as a class that can then be loaded by the classloader")))
 

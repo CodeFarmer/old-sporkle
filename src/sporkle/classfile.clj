@@ -315,23 +315,49 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 ;; writing classfiles
 
+;; has test
 (defn write-class-header [stream]
   (write-bytes stream (map byte-from-unsigned MAGIC_BYTES))
   (write-bytes stream (map byte-from-unsigned MINOR_VERSION_BYTES))
   (write-bytes stream (map byte-from-unsigned MAJOR_VERSION_BYTES)))
 
-(defn write-constant-pool [stream])
+;; pool-writey stuff all needs tests
+(defn write-pool [stream writefn pool]
+  (write-bytes (two-byte-index (count pool)))
+  (doseq [p pool]
+    (writefn stream p)))
+
+
+(defmulti constant-pool-entry-bytes tag)
+
+(defmethod constant-pool-entry-bytes CONSTANT_Utf8 [cp-entry]
+  ;; not convinced this is a great idea
+  (flatten [(:tag cp-entry) (two-byte-index (count (:bytes cp-entry))) (:bytes cp-entry)]))
+
+(defmethod constant-pool-entry-bytes CONSTANT_Integer [cp-entry]
+  ;; take 4 ensures you don't over/underrun in case of mangled fields, is this actually useful?
+  (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
+
+(defmethod constant-pool-entry-bytes :default [cp-entry]
+  (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (tag cp-entry))))))
+
+; unit test?
+(defn write-constant-pool-entry [stream entry]
+  (write-bytes stream (constant-pool-entry-bytes entry)))
+
 (defn write-interface-list [stream])
 (defn write-field-list [stream])
 (defn write-method-list [stream])
 (defn write-attribute-list [stream])
 
 (defn write-java-class [stream java-class]
+  
   (write-class-header   stream)
-  (write-constant-pool  stream (:constant-pool java-class))
+  (write-pool           stream write-constant-pool-entry (:constant-pool java-class))
   (write-bytes          stream (:access-flags  java-class))
   (write-bytes          stream (:this-class    java-class))
   (write-bytes          stream (:super-class   java-class))
+  
   (write-interface-list stream (:interfaces    java-class))
   (write-field-list     stream (:fields        java-class))
   (write-method-list    stream (:methods       java-class))
