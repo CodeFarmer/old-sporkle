@@ -84,5 +84,16 @@
         (is (= (:g amap) 4)     "should read g third")
         (is (= (:h amap) [2 3]) "should read h second")))))
 
+
 (deftest test-each-with-index
   (is (= [[:a 0] [:b 1] [nil 2] [:c 3]] (each-with-index [:a :b nil :c]))))
+
+
+(deftest test-write-bytes
+  
+  (with-open [stream (java.io.ByteArrayOutputStream.)]
+    (is (= stream (write-bytes stream [1 2 3]))
+        "write-bytes should return the stream it is writing to"))
+
+  (with-open [stream (java.io.ByteArrayOutputStream.)]
+    (is (= [1 2 3 4 5] (seq (.toByteArray (write-bytes stream [1 2 3 4 5])))))))
