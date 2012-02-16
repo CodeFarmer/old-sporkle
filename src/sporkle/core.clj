@@ -42,6 +42,18 @@
        (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
 
 
+(defn byte-from-unsigned [i]
+  "Try and coerce an integer in the range Byte.MIN_VALUE, Byte.MAX_VALUE from an unsigned integer between 0x00 and 0xFF. Behaviour is undefined outside those values!"
+  (if (> i Byte/MAX_VALUE) ; try and assume it's unsigned
+    (+ 0x80 (- i))
+    i))
+
+
+(def MAGIC_BYTES         [0xCA 0xFE 0xBA 0xBE])
+(def MAJOR_VERSION_BYTES [0x00 0x32])
+(def MINOR_VERSION_BYTES [0x00 0x00])
+
+
 (defn unpack-struct
   "Given a list of [:key integer] and a seq, return a vec containing 1) a map whose keys are all the keys from the pairs, plus seqs made of from the requisite numbers of bytes from aseq each (in the order they appear in avec), and 2) the remainder of the seq.
 

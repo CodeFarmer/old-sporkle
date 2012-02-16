@@ -47,6 +47,20 @@
         (is (= java.lang.Long (type b)) "should not overflow into BigInteger even when bigger than Long.MAX_VALUE")))))
 
 
+(deftest test-byte-from-unsigned
+  
+  (testing "for values within the normal range for signed byte"
+    (is (= 0 (byte-from-unsigned 0))
+        "0 should be the easiest case")
+    (is (= 5 (byte-from-unsigned 5))
+        "Working for small numbers")
+    (is (= 127 (byte-from-unsigned 127))))
+
+  (testing "for values between 128 and 255"
+
+    (is (= 0xFE (bytes-to-integral-type [(byte-from-unsigned 0xFE)])))))
+
+
 (deftest test-unpack-struct
 
   (testing "reading a simple struct from a stream with some trailing bytes"
