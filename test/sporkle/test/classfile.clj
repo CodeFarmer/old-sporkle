@@ -214,3 +214,13 @@
 ;; TODO: write a test for line number tables, local variables, exceptions and so on.
 
 
+(deftest test-friendly-code
+
+  (testing "simple code with fixed operands"
+    (let [code-bytes [42 183 0 1 177]]
+
+      (is (= [:aload_0
+              :invokespecial 0 1
+              :return] ; this is the empty constructor from my local javac
+
+             (friendly-code code-bytes))))))

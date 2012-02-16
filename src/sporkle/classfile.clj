@@ -196,6 +196,28 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
     (constant-value java-class (get-constant java-class (bytes-to-integral-type (:name-index thing))))))
 
 
+;; dissassembly
+(defn friendly-code
+  ([code-data]
+     "Given the raw bytes of a code attribute, return them as a vector of :opcode keywords with the correct number of integer arguments per opcode.
+
+(friendly-code (:code (unpack-code-attribute (attribute-named clazz (first (:methods clazz)) \"Code\"))))"
+
+     (friendly-code [] code-data))
+
+  ([acc code-data]
+
+     (if (empty? code-data)
+       acc
+       (let [opcode-byte (first code-data)
+             remainder   (rest code-data)
+             [opcode-name _ argwidth _] (get bytes-to-opcodes opcode-byte)]
+         
+         (recur (into (conj acc opcode-name) (take argwidth remainder)) (drop argwidth remainder))))))
+
+
+
+
 ;; FIXME everything below needs a test ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test ;; FIXME everything below needs a test
@@ -284,21 +306,4 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
        read-attributes-maplet]
        (:info attribute)))))
 
-
-;; dissassembly
-(defn friendly-code
-  ([code-data]
-     "Given the raw bytes of a code attribute, return them as a vector of :opcode keywords with the correct number of integer arguments per opcode"
-
-     (friendly-code [] code-data))
-
-  ([acc code-data]
-
-     (if (empty? code-data)
-       acc
-       (let [opcode-byte (first code-data)
-             remainder   (rest code-data)
-             [opcode-name _ argwidth _] (get bytes-to-opcodes opcode-byte)]
-         
-         (recur (into (conj acc opcode-name) (take argwidth remainder)) (drop argwidth remainder))))))
 
