@@ -100,3 +100,8 @@ Returns a pair [map, remainder], so it can nest within itself"
   (doseq [b byte-seq] (.write stream b))
   stream)
 
+
+(defn two-byte-index [i]
+  [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
+
+
