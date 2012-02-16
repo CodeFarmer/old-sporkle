@@ -338,6 +338,21 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   ;; take 4 ensures you don't over/underrun in case of mangled fields, is this actually useful?
   (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
 
+(defn ref-bytes [cp-entry]
+  ;; these are already starting to look very repetitive, and they also duplicate information
+  ;; in read-constant-pool-entry - FIXME
+  (flatten [(:tag cp-entry) (take 2 (:class-index cp-entry)) (take 2 (:name-and-type-index cp-entry))]))
+
+(defmethod constant-pool-entry-bytes CONSTANT_Methodref [cp-entry]
+  (ref-bytes cp-entry))
+(defmethod constant-pool-entry-bytes CONSTANT_Fieldref [cp-entry]
+  (ref-bytes cp-entry))
+(defmethod constant-pool-entry-bytes CONSTANT_InterfaceMethodref [cp-entry]
+  (ref-bytes cp-entry))
+
+(defmethod constant-pool-entry-bytes CONSTANT_Class [cp-entry]
+  (into (:tag cp-entry) (:name-index cp-entry)))
+  
 (defmethod constant-pool-entry-bytes :default [cp-entry]
   (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (tag cp-entry))))))
 

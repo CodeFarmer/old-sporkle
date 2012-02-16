@@ -248,7 +248,18 @@
   (testing "integer constant"
     ;; consider making assertions about incoming field lengths?
     (is (= [3 24 109 0 1] (constant-pool-entry-bytes {:tag [3] :bytes [24 109 0 1]}))
-        "should convert integer simply as a tag and the four bytes")))
+        "should convert integer simply as a tag and the four bytes"))
+
+  (testing "method-ref constant"
+    ;; field-ref and interface-method-ref use the same code
+    (is (= [10 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [10]}))))
+  (testing "field-ref constant"
+    (is (= [9 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [9]}))))
+  (testing "interface-method-ref constant"
+    (is (= [11 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [11]}))))
+
+  (testing "class constant"
+    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index [0 11] :tag [7]})))))
 
 
 
