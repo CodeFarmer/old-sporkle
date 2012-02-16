@@ -72,9 +72,13 @@
       
       (is (not (nil? (:this-class clazz)))
           "java-class should have a this-class member")
+      (is (= 2 (count (:this-class clazz)))
+          "java-class this-class should be two bytes long")
 
       (is (not (nil? (:super-class clazz)))
           "java-class should have a super-class")
+      (is (= 2 (count (:super-class clazz)))
+          "java-class super-class should be two bytes long")
 
       (is (not (nil? (:major-version clazz)))
           "java-class should have a format major version")
@@ -87,6 +91,8 @@
 
       (is (not (nil? (:access-flags clazz)))
           "java-class should have some access flags")
+      (is (= 2 (count (:access-flags clazz)))
+          "java-class access flags should be two bytes long")
 
       (is (coll? (:attributes clazz))
           "java-class should have an attributes vector"))))
@@ -114,3 +120,14 @@
 
     (is (empty? (:fields clazz))
         "Minimal class should have no fields")))
+
+
+(deftest test-write-class-header
+  (with-open [stream (java.io.ByteArrayOutputStream.)]
+    (is (= stream (write-class-header stream))
+        "write-class-header should return the stream it writes to"))
+
+  (with-open [stream (java.io.ByteArrayOutputStream.)]
+    (is (= (map byte-from-unsigned [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32])
+           (seq (.toByteArray (write-class-header stream))))
+        "write-class-header should write a valid and correct class header")))

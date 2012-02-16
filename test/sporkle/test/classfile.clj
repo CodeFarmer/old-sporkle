@@ -225,8 +225,19 @@
 
              (friendly-code code-bytes))))))
 
+;; class writing
 
-(deftest test-write-class
-  (testing "Reading a class produced by javac and writing it back as a class that can then be loaded by the classloader")
+(deftest test-write-class-header
+  (with-open [stream (java.io.ByteArrayOutputStream.)]
+    (is (= stream (write-class-header stream))
+        "write-class-header should return the stream it writes to"))
 
-  )
+  (with-open [stream (java.io.ByteArrayOutputStream.)]
+    (is (= (map byte-from-unsigned [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32])
+           (seq (.toByteArray (write-class-header stream))))
+        "write-class-header should write a valid and correct class header")))
+
+(comment (deftest test-write-class
+           (testing "Reading a class produced by javac and writing it back as a class that can then be loaded by the classloader")))
+
+

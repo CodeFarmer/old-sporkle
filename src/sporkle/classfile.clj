@@ -1,6 +1,7 @@
 (ns sporkle.classfile  
   (:use sporkle.core)
   (:use sporkle.bytecode)
+  (:require [clojure.java.io :as io])
   (:require [clojure.string :as str]))
 
 ;; ClassFile {
@@ -312,3 +313,26 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
        (:info attribute)))))
 
 
+;; writing classfiles
+
+(defn write-class-header [stream]
+  (write-bytes stream (map byte-from-unsigned MAGIC_BYTES))
+  (write-bytes stream (map byte-from-unsigned MINOR_VERSION_BYTES))
+  (write-bytes stream (map byte-from-unsigned MAJOR_VERSION_BYTES)))
+
+(defn write-constant-pool [stream])
+(defn write-interface-list [stream])
+(defn write-field-list [stream])
+(defn write-method-list [stream])
+(defn write-attribute-list [stream])
+
+(defn write-java-class [stream java-class]
+  (write-class-header   stream)
+  (write-constant-pool  stream (:constant-pool java-class))
+  (write-bytes          stream (:access-flags  java-class))
+  (write-bytes          stream (:this-class    java-class))
+  (write-bytes          stream (:super-class   java-class))
+  (write-interface-list stream (:interfaces    java-class))
+  (write-field-list     stream (:fields        java-class))
+  (write-method-list    stream (:methods       java-class))
+  (write-attribute-list stream (:attributes    java-class)))

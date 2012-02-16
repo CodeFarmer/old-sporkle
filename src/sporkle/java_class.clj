@@ -27,6 +27,7 @@
     (include-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
 
 
+
 (defn java-class [class-name]
 
   ;; this serial redefinition of cp is definitely bad style. But what's the good style?
@@ -34,9 +35,9 @@
   (let [[cp this-idx]  (cp-add-class [] class-name)
         [cp super-idx] (cp-add-class cp "java/lang/Object")]
     
-    {:magic         [0xCA 0xFE 0xBA 0xBE]
-     :major-version [0x00 0x32]
-     :minor-version [0x00 0x00]
+    {:magic         MAGIC_BYTES
+     :major-version MINOR_VERSION_BYTES
+     :minor-version MAJOR_VERSION_BYTES
      :access-flags  (two-byte-index ACC_SUPER)
      :constant-pool cp
      :methods       []
