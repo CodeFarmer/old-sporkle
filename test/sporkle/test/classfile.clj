@@ -259,7 +259,13 @@
     (is (= [11 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [11]}))))
 
   (testing "class constant"
-    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index [0 11] :tag [7]})))))
+    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index [0 11] :tag [7]}))))
+
+  (comment (testing "name-and-type constant"))
+  (comment (testing "string constant"))
+  (comment (testing "float constant"))
+
+  (comment "long and double constants are hairy"))
 
 
 
