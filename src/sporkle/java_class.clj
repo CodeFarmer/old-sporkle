@@ -3,10 +3,6 @@
   (:use [sporkle.classfile]))
 
 
-(defn two-byte-index [i]
-  [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
-
-
 (defn include-constant [constant-pool constant-info]
   (if-let [index (cp-find constant-pool constant-info)]
     [constant-pool index]
