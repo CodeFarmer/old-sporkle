@@ -123,7 +123,7 @@
 
   (testing "reading a simple class"
 
-    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+    (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
 
       (is (= 0xCAFEBABE (bytes-to-unsigned-integral-type (:magic java-class))) "gotta get the magic number right")
       (is (= 0x0000 (bytes-to-integral-type (:minor-version java-class)))   "minor version number of the class file")
@@ -150,29 +150,29 @@
   
   (testing "reading a Java class with some marker interfaces"
 
-    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/SerializableNothing.class")))]
+    (let [java-class (read-java-class-file "test/fixtures/SerializableNothing.class")]
       (= 2 (count (:interfaces java-class)) "The class should have two entries in its interface list")))
 
   (testing "reading a Java class with some fields"
     
-    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/FieldNothing.class")))]
+    (let [java-class (read-java-class-file "test/fixtures/FieldNothing.class")]
       (is  (= 2 (count (:fields java-class))) "The class should have two entries in its field list"))
     
     )
 
   (testing "reading a Java class with a method"
 
-    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/MethodNothing.class")))]
+    (let [java-class (read-java-class-file "test/fixtures/MethodNothing.class")]
 
       (is (= 2 (count (:methods java-class))) "the class should return one method"))))
 
 ;; information about fields or methods or... anything with a :name-index
 (deftest test-get-name
-  (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+  (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))))
 
 (deftest test-getters
-  (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))]
+  (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))
     (is (= "()V" (descriptor java-class (first (:methods java-class)))))))
 
@@ -181,7 +181,7 @@
 
   (testing "Unpacking the code attribute of an empty <init> method in an empty class"
     
-    (let [java-class (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class")))
+    (let [java-class (read-java-class-file "test/fixtures/Nothing.class")
           code-attrib (unpack-code-attribute (attribute-named java-class (first (:methods java-class)) "Code"))]
 
       (is (not (nil? code-attrib))
@@ -224,3 +224,9 @@
               :return] ; this is the empty constructor from my local javac
 
              (friendly-code code-bytes))))))
+
+
+(deftest test-write-class
+  (testing "Reading a class produced by javac and writing it back as a class that can then be loaded by the classloader")
+
+  )

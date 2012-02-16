@@ -135,6 +135,7 @@
   (println (map #(format "0x%02x" %) (take 256 bytes)))
   [{} bytes])
 
+
 ;; the overall stream-to-class function
 (defn read-java-class [bytes]
 
@@ -148,6 +149,10 @@
      #(read-struct-list-maplet :methods    read-field-or-method-info %)
      read-attributes-maplet]
     bytes)))
+
+(defn read-java-class-file [filename]
+  "Convenience method; read a java-class map from a named file"
+  (read-java-class (byte-stream-seq (io/input-stream filename))))
 
 ;; and now some classfile byte extraction goodness
 
@@ -218,10 +223,10 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 
 
-;; FIXME everything below needs a test ;; FIXME everything below needs a test
-;; FIXME everything below needs a test ;; FIXME everything below needs a test
-;; FIXME everything below needs a test ;; FIXME everything below needs a test
-;; FIXME everything below needs a test ;; FIXME everything below needs a test
+;; FIXME everything below needs a test
+;; FIXME everything below needs a test
+;; FIXME everything below needs a test
+;; FIXME everything below needs a test
 
 
 (defn read-code-maplet [bytes]
