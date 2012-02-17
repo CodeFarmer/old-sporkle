@@ -9,7 +9,7 @@
 
   (testing "Reading from a known UTF8 constant from a classfile, with some trailing bytes"
 
-    (let [[entry rest] (read-constant-pool-entry
+    (let [[entry rest](read-constant-pool-entry
                         [0x01 0x00 0x0C 0x4E  0x6F 0x74 0x68 0x69
                          0x6E 0x67 0x2E 0x6A  0x61 0x76 0x61 0x0C
                          ;; 0x61 is actually the last byte ^ of the entry
@@ -84,15 +84,35 @@
       (is (= [0x40 0x20 0x00 0x00] (:bytes entry))
           "should have four bytes")
       (is (= [0xFF] rest)
-          "should correctly return the remaining bytes")
+          "should correctly return the remaining byte")
       (is (= 2.5 (constant-value nil entry))
           "should be able to read the bytes into a float")))
 
-  ;; TODO
-  (comment (testing "reading a long constant"))
+  (testing "Reading a long constant, with a trailing byte"
 
-  ;; TODO
-  (comment (testing "reading a double constant"))
+    (let [[entry rest] (read-constant-pool-entry [0x05 0x00 0x00 0x00 0x00 0x40 0x20 0x00 0x00 0xFF])]
+
+      (is (= CONSTANT_Long (tag entry))
+          "should read the correct tag")
+      (is (= [0x00 0x00 0x00 0x00] (:high-bytes entry))
+          "should have four high bytes")
+      (is (= [0x40 0x20 0x00 0x00] (:low-bytes entry))
+          "should have four low bytes")
+      (is (= [0xFF] rest)
+          "should correctly return the remaining byte")))
+
+  (testing "Reading a double constant, with a trailing byte"
+
+    (let [[entry rest] (read-constant-pool-entry [0x06 0x00 0x00 0x00 0x00 0x40 0x20 0x00 0x00 0xFF])]
+
+      (is (= CONSTANT_Double (tag entry))
+          "should read the correct tag")
+      (is (= [0x00 0x00 0x00 0x00] (:high-bytes entry))
+          "should have four high bytes")
+      (is (= [0x40 0x20 0x00 0x00] (:low-bytes entry))
+          "should have four low bytes")
+      (is (= [0xFF] rest)
+          "should correctly return the remaining byte")))
   
   (testing "reading from a constant with an unknown tag value"
     
@@ -293,6 +313,19 @@
           "The code attribute from the example code happens to have a line number table"))))
 
 ;; TODO: write a test for line number tables, local variables, exceptions and so on.
+
+
+;; This is going to end up quite a large test, but only as g-c-v gets implemented (once I figure out what it should really return).
+(deftest test-get-constant-value
+  
+  (let [clazz (read-java-class-file "test/fixtures/ClassWithAllConstantPoolTypes.class")
+        constant-pool (:constant-pool clazz)]
+    
+    (testing "utf-8 constant"
+      (is (= "java/util/Set" (constant-value clazz (nth constant-pool 56)))
+          "The 56th constant is the canonical name of java.util.Set, and should be returned as a String"))
+
+    (comment "TODO and aaaaalll the rest of them, just need to figure out what shape they should be")))
 
 
 (deftest test-friendly-code
