@@ -85,6 +85,9 @@
 (defmethod read-constant-pool-entry CONSTANT_NameAndType [bytes]
   (unpack-struct [[:tag 1] [:name-index 2] [:descriptor-index 2]] bytes))
 
+(defmethod read-constant-pool-entry CONSTANT_String [bytes]
+  (unpack-struct [[:tag 1] [:string-index 2]] bytes))
+
 (defmethod read-constant-pool-entry :default [bytes]
   (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))
 
@@ -339,7 +342,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
 
 (defn ref-bytes [cp-entry]
-  ;; these are already starting to look very repetitive, and they also duplicate information
+  ;; these are all already starting to look very repetitive, and they also duplicate information
   ;; in read-constant-pool-entry - FIXME
   (flatten [(:tag cp-entry) (take 2 (:class-index cp-entry)) (take 2 (:name-and-type-index cp-entry))]))
 
@@ -352,6 +355,12 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 (defmethod constant-pool-entry-bytes CONSTANT_Class [cp-entry]
   (into (:tag cp-entry) (:name-index cp-entry)))
+
+(defmethod constant-pool-entry-bytes CONSTANT_NameAndType [cp-entry]
+  (flatten [(:tag cp-entry) (take 2 (:name-index cp-entry)) (take 2 (:descriptor-index cp-entry))]))
+
+(defmethod constant-pool-entry-bytes CONSTANT_String [cp-entry]
+  (into (:tag cp-entry) (:string-index cp-entry)))
   
 (defmethod constant-pool-entry-bytes :default [cp-entry]
   (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (tag cp-entry))))))

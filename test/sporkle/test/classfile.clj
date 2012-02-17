@@ -53,7 +53,13 @@
         (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))))
 
 
-  (testing "Reading from a constant with an unknown tag value"
+  (testing "reading a string field with trailing bytes"
+    (let [[entry rest] (read-constant-pool-entry [0x08 0x00 0x05 0x10 0x00])]
+      (is (= CONSTANT_String (tag entry)) "should record the correct tag")
+      (is (= [0x00 0x05] (:string-index entry)) "should record the string-index bytes")
+      (is (= [0x10 0x00]) "should leave the correct remainder")))
+  
+  (testing "reading from a constant with an unknown tag value"
     
     (is (thrown? IllegalArgumentException (read-constant-pool-entry [0x0D 0xFF 0xFF]))))))
 
@@ -261,8 +267,14 @@
   (testing "class constant"
     (is (= [7 0 11] (constant-pool-entry-bytes {:name-index [0 11] :tag [7]}))))
 
-  (comment (testing "name-and-type constant"))
-  (comment (testing "string constant"))
+  (testing "name-and-type constant"
+    (is (= [12 0 4 0 5] (constant-pool-entry-bytes {:descriptor-index [0 5], :name-index [0 4], :tag [12]}))
+        "name-and-type constant should be ordered tag, name-index, descriptior-index"))
+  
+  (testing "string constant"
+    (is (= [8 0 16] (constant-pool-entry-bytes {:string-index [0 16] :tag [8]}))
+        "string constant should be ordered tag, string-index"))
+  
   (comment (testing "float constant"))
 
   (comment "long and double constants are hairy"))
