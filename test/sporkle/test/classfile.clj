@@ -67,6 +67,10 @@
       (is (= [0x40 0x20 0x00 0x00] (:bytes entry))      "should have four bytes")
       (is (= [0xFF] rest)                "should correctly return the remaining bytes")
       (is (= 2.5 (constant-value nil entry)) "should be able to read the bytes into a float")))
+
+  ;; TODO
+  (comment (testing "reading a long constant"))
+  (comment (testing "reading a double constant"))
   
   (testing "reading from a constant with an unknown tag value"
     
@@ -294,7 +298,8 @@
     (is (= [4 64 32 0 0] (constant-pool-entry-bytes {:bytes [64 32 0 0] :tag [4]}))
         "float constant should be ordered tag, bytes"))
 
-  (comment "long and double constants are hairy... or are they? Look more closely at the spec"))
+  (comment (testing "long constant"))
+  (comment (testing "double constant")))
 
 
 
