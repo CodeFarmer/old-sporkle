@@ -64,7 +64,7 @@
     (let [[entry rest] (read-constant-pool-entry [0x04 0x40 0x20 0x00 0x00 0xFF])]
 
       (is (= CONSTANT_Float (tag entry)) "should read the correct tag")
-      (is (= [0x40 0x20 0x00 0x00])      "should have four bytes")
+      (is (= [0x40 0x20 0x00 0x00] (:bytes entry))      "should have four bytes")
       (is (= [0xFF] rest)                "should correctly return the remaining bytes")
       (is (= 2.5 (constant-value nil entry)) "should be able to read the bytes into a float")))
   
@@ -82,8 +82,14 @@
         (is (= 12 (count pool)) "should read the right number of constants")
         (is (every? #(contains? % :tag) pool) "should return a seq of objects with tag fields")
         (is (= 0x0A (tag (first pool))) "should have the constant pool objects in the right order"))
-      ;; IMPLEMENT ME
-      )))
+      ))
+
+  (testing "reading the constant pool from a class with wide constants"
+
+    (let [[constant-pool-maplet remainder] (read-constant-pool-maplet (drop 8 (byte-stream-seq (io/input-stream "test/fixtures/LongFieldStaticInit.class"))))]
+
+      (is (= 19 (count (:constant-pool constant-pool-maplet)))
+          "The constant pool has only 18 constants, but there should be a spacer for the float at index 3"))))
 
 
 (deftest test-read-attribute
@@ -288,7 +294,7 @@
     (is (= [4 64 32 0 0] (constant-pool-entry-bytes {:bytes [64 32 0 0] :tag [4]}))
         "float constant should be ordered tag, bytes"))
 
-  (comment "long and double constants are hairy"))
+  (comment "long and double constants are hairy... or are they? Look more closely at the spec"))
 
 
 

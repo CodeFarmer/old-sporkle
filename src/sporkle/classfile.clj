@@ -58,6 +58,16 @@
 (def ^:const CONSTANT_NameAndType        12)
 (def ^:const CONSTANT_Utf8                1)
 
+
+;; some classfile byte extraction goodness
+
+(defn tag [unpacked-struct]
+  (bytes-to-integral-type (:tag unpacked-struct)))
+
+(defn access-flags [unpacked-struct]
+  (bytes-to-integral-type (:access-flags unpacked-struct)))
+
+
 ;; conforms to the expectations of read-stream-maplets
 ;; FIXME document this
 (defmulti read-constant-pool-entry first)
@@ -91,8 +101,20 @@
 (defmethod read-constant-pool-entry CONSTANT_Float [bytes]
   (unpack-struct [[:tag 1] [:bytes 4]] bytes))
 
+(defmethod read-constant-pool-entry CONSTANT_Long [bytes]
+  (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
+(defmethod read-constant-pool-entry CONSTANT_Double [bytes]
+  (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
+
+;; This is almost certainly fucked and wrong
+(comment (defmethod read-constant-pool-entry 0 [bytes]
+           (unpack-struct [[:tag 1] [:bytes 2]] bytes)))
+
 (defmethod read-constant-pool-entry :default [bytes]
-  (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))
+  (let [tag (first bytes)]
+    (if (nil? tag)
+      (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with nil tag")))
+      (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))))
 
 ;; getting constant values usefully
 
@@ -119,10 +141,21 @@
   (read-struct-list-maplet :attributes read-attribute bytes))
 
 
+(defn read-cp-entry-list-maplet
+  "This should be read-struct-list-maplet, except that for long and double constants you need to bump the index twice. No, me either."
+  ;; "In retrospect, making 8-byte constants take two constant pool entries was a poor choice." :P
+  [acc count key readfn bytes]
+  (if (zero? count) [{key acc} bytes]
+      (let [[descriptor remainder] (readfn bytes)]
+        (if (#{CONSTANT_Double CONSTANT_Long} (tag descriptor))
+          ;; "The constant_pool table is indexed from 1 to constant_pool_count-1."
+          (recur (conj (conj acc descriptor) {:tag [:spacer]}) (- count 2) key readfn remainder)
+          (recur (conj acc descriptor) (dec count) key readfn remainder)))))
+
 ;; the constant pool, annoyingly, has a different way of expressing its length than every other struct list
 (defn read-constant-pool-maplet [bytes]
   (let [count (dec (bytes-to-integral-type (take 2 bytes))) remainder (drop 2 bytes)]
-    (read-struct-list-maplet [] count :constant-pool read-constant-pool-entry remainder)))
+    (read-cp-entry-list-maplet [] count :constant-pool read-constant-pool-entry remainder)))
 
 
 (defn read-field-or-method-info [bytes]
@@ -162,13 +195,6 @@
   (with-open [stream (io/input-stream filename)]
     (read-java-class (byte-stream-seq stream))))
 
-;; and now some classfile byte extraction goodness
-
-(defn tag [unpacked-struct]
-  (bytes-to-integral-type (:tag unpacked-struct)))
-
-(defn access-flags [unpacked-struct]
-  (bytes-to-integral-type (:access-flags unpacked-struct)))
 
 ;; pass the constant pool, as some things evaluate to indices into it which should be followed
 (defmulti constant-value #(tag %2))
@@ -371,6 +397,9 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 (defmethod constant-pool-entry-bytes CONSTANT_String [cp-entry]
   (into (:tag cp-entry) (:string-index cp-entry)))
+
+(defmethod constant-pool-entry-bytes :spacer [cp-entry]
+  [])
   
 (defmethod constant-pool-entry-bytes :default [cp-entry]
   (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (tag cp-entry))))))
@@ -388,11 +417,11 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   
   (write-class-header   stream)
   (write-pool           stream write-constant-pool-entry (:constant-pool java-class))
-  (write-bytes          stream (:access-flags  java-class))
-  (write-bytes          stream (:this-class    java-class))
-  (write-bytes          stream (:super-class   java-class))
+  (write-bytes          stream (:access-flags java-class))
+  (write-bytes          stream (:this-class   java-class))
+  (write-bytes          stream (:super-class  java-class))
   
-  (write-interface-list stream (:interfaces    java-class))
-  (write-field-list     stream (:fields        java-class))
-  (write-method-list    stream (:methods       java-class))
-  (write-attribute-list stream (:attributes    java-class)))
+  (write-interface-list stream (:interfaces   java-class))
+  (write-field-list     stream (:fields       java-class))
+  (write-method-list    stream (:methods      java-class))
+  (write-attribute-list stream (:attributes   java-class)))
