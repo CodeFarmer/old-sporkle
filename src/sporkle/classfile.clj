@@ -62,7 +62,10 @@
 ;; some classfile byte extraction goodness
 
 (defn tag [unpacked-struct]
-  (bytes-to-integral-type (:tag unpacked-struct)))
+  (let [t (:tag unpacked-struct)]
+    (if (keyword? (first t))
+      (first t)
+      (bytes-to-integral-type (:tag unpacked-struct)))))
 
 (defn access-flags [unpacked-struct]
   (bytes-to-integral-type (:access-flags unpacked-struct)))
