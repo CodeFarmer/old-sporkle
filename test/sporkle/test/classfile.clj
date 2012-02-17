@@ -53,11 +53,20 @@
         (is (= [0x00 0x0A] (:name-and-type-index entry "should record the name and type index bytes"))))))
 
 
-  (testing "reading a string field with trailing bytes"
+  (testing "reading a string entry with trailing bytes"
     (let [[entry rest] (read-constant-pool-entry [0x08 0x00 0x05 0x10 0x00])]
       (is (= CONSTANT_String (tag entry)) "should record the correct tag")
       (is (= [0x00 0x05] (:string-index entry)) "should record the string-index bytes")
       (is (= [0x10 0x00]) "should leave the correct remainder")))
+
+  (testing "Reading a float constant, with a trailing byte"
+
+    (let [[entry rest] (read-constant-pool-entry [0x04 0x40 0x20 0x00 0x00 0xFF])]
+
+      (is (= CONSTANT_Float (tag entry)) "should read the correct tag")
+      (is (= [0x40 0x20 0x00 0x00])      "should have four bytes")
+      (is (= [0xFF] rest)                "should correctly return the remaining bytes")
+      (is (= 2.5 (constant-value nil entry)) "should be able to read the bytes into a float")))
   
   (testing "reading from a constant with an unknown tag value"
     
@@ -275,7 +284,9 @@
     (is (= [8 0 16] (constant-pool-entry-bytes {:string-index [0 16] :tag [8]}))
         "string constant should be ordered tag, string-index"))
   
-  (comment (testing "float constant"))
+  (testing "float constant"
+    (is (= [4 64 32 0 0] (constant-pool-entry-bytes {:bytes [64 32 0 0] :tag [4]}))
+        "float constant should be ordered tag, bytes"))
 
   (comment "long and double constants are hairy"))
 

@@ -88,6 +88,9 @@
 (defmethod read-constant-pool-entry CONSTANT_String [bytes]
   (unpack-struct [[:tag 1] [:string-index 2]] bytes))
 
+(defmethod read-constant-pool-entry CONSTANT_Float [bytes]
+  (unpack-struct [[:tag 1] [:bytes 4]] bytes))
+
 (defmethod read-constant-pool-entry :default [bytes]
   (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))
 
@@ -181,6 +184,10 @@
 (defmethod constant-value CONSTANT_Integer [java-class pool-entry]
   (bytes-to-integral-type (:bytes pool-entry)))
 
+(defmethod constant-value CONSTANT_Float [java-class pool-entry]
+  (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
+
+;; FIXME this borked before Float was implemented, why?
 (defmethod constant-value :default [java-class pool-entry]
   (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
 
@@ -339,6 +346,8 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 (defmethod constant-pool-entry-bytes CONSTANT_Integer [cp-entry]
   ;; take 4 ensures you don't over/underrun in case of mangled fields, is this actually useful?
+  (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
+(defmethod constant-pool-entry-bytes CONSTANT_Float [cp-entry]
   (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
 
 (defn ref-bytes [cp-entry]
