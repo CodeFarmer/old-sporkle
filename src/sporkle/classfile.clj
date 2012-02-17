@@ -159,7 +159,8 @@
 
 (defn read-java-class-file [filename]
   "Convenience method; read a java-class map from a named file"
-  (read-java-class (byte-stream-seq (io/input-stream filename))))
+  (with-open [stream (io/input-stream filename)]
+    (read-java-class (byte-stream-seq stream))))
 
 ;; and now some classfile byte extraction goodness
 
