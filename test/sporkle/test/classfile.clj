@@ -387,8 +387,13 @@
     (is (= [4 64 32 0 0] (constant-pool-entry-bytes {:bytes [64 32 0 0] :tag [4]}))
         "float constant should be ordered tag, bytes"))
 
-  (comment (testing "long constant"))
-  (comment (testing "double constant")))
+  (testing "long constant"
+    (is (= [5 00 00 34 23] (constant-pool-entry-bytes {:high-bytes [00 00] :low-bytes [34 23] :tag [5]}))
+        "long constant is tag, two high bytes, two low bytes"))
+
+  (testing "double constant"
+    (is (= [6 04 00 34 23] (constant-pool-entry-bytes {:high-bytes [04 00] :low-bytes [34 23] :tag [6]}))
+        "double constant is tag, two high bytes, two low bytes")))
 
 
 

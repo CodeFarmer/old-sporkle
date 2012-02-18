@@ -401,6 +401,11 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defmethod constant-pool-entry-bytes CONSTANT_String [cp-entry]
   (into (:tag cp-entry) (:string-index cp-entry)))
 
+(defmethod constant-pool-entry-bytes CONSTANT_Long [cp-entry]
+  (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
+(defmethod constant-pool-entry-bytes CONSTANT_Double [cp-entry]
+  (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
+
 (defmethod constant-pool-entry-bytes :spacer [cp-entry]
   [])
   
