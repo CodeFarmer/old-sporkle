@@ -363,7 +363,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 ;; pool-writey stuff all needs tests
 (defn write-pool [stream writefn pool]
-  (write-bytes (two-byte-index (count pool)))
+  (write-bytes stream (two-byte-index (count pool)))
   (doseq [p pool]
     (writefn stream p)))
 
