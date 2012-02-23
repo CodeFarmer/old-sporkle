@@ -2,6 +2,7 @@
 
 
 (defn byte-stream-seq
+  ;; FIXME this returns Longs, which are problematic when unsigned bytes are wanted - for example you can't just use to-byte-array on this seq, and you should!
   "Returns a lazy sequence of bytes from a java.io.InputStream"
 
   [^java.io.InputStream stream]
@@ -9,6 +10,15 @@
     (if (= b -1)
       ()
       (cons b (lazy-seq (byte-stream-seq stream))))))
+
+(defn read-stream-to-byte-array [stream]
+  "FIXME this should not be necessary; either that or ditch byte-stream-seq (which maybe doesn't really need to be lazy)"
+  (let [baos (java.io.ByteArrayOutputStream.)]
+    (loop [b (.read stream)]
+      (if (= b -1)
+        (.toByteArray baos)
+        (do (.write baos b)
+            (recur (.read stream)))))))
 
 
 (defn bytes-to-unsigned-integral-type
