@@ -137,9 +137,19 @@
 
 
 (deftest test-write-java-class
+  
   (with-open [stream (ByteArrayOutputStream.)]
     (is (= stream (write-java-class stream (java-class "Nothing")))
-        "write-java-class should return the stream it writes to")))
+        "write-java-class should return the stream it writes to"))
+
+  (comment (testing "reading back what we've written out"
+
+             (with-open [stream (ByteArrayOutputStream.)]
+
+               (let [class-map-src  (java-class "Nothing")
+                     bytes          (.toByteArray (write-java-class stream class-map-src))
+                     class-map-dest (read-java-class bytes)]
+                 (is (= class-map-src class-map-dest) "Should be able to unpack the same class from bytes we've put in"))))))
 
 
 (deftest test-write-simplest-complete-class

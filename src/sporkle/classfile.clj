@@ -358,11 +358,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (write-bytes stream (map byte-from-unsigned MINOR_VERSION_BYTES))
   (write-bytes stream (map byte-from-unsigned MAJOR_VERSION_BYTES)))
 
-;; pool-writey stuff all needs tests
-(defn write-pool [stream writefn pool]
-  (write-bytes stream (two-byte-index (count pool)))
-  (doseq [p pool]
-    (writefn stream p)))
 
 
 (defmulti constant-pool-entry-bytes tag)
@@ -413,6 +408,13 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn write-constant-pool-entry [stream entry]
   (write-bytes stream (map byte-from-unsigned (constant-pool-entry-bytes entry))))
 
+;; pool-writey stuff all needs tests
+(defn write-constant-pool [stream pool]
+  ;; the necessity for (inc pool) is deeply weird but.. RTFS I guess.
+  (write-bytes stream (two-byte-index (inc (count pool))))
+  (doseq [p pool]
+    (write-constant-pool-entry stream p)))
+
 (defn write-interface-list [stream interfaces-list])
 (defn write-field-list [stream field-list])
 (defn write-method-list [stream method-list])
@@ -421,13 +423,13 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn write-java-class [stream java-class]
   
   (write-class-header   stream)
-  (write-pool           stream write-constant-pool-entry (:constant-pool java-class))
-  (write-bytes          stream (:access-flags java-class))
-  (write-bytes          stream (:this-class   java-class))
-  (write-bytes          stream (:super-class  java-class))
+  (write-constant-pool  stream (:constant-pool java-class))
+  (write-bytes          stream (:access-flags  java-class))
+  (write-bytes          stream (:this-class    java-class))
+  (write-bytes          stream (:super-class   java-class))
   
-  (write-interface-list stream (:interfaces   java-class))
-  (write-field-list     stream (:fields       java-class))
-  (write-method-list    stream (:methods      java-class))
-  (write-attribute-list stream (:attributes   java-class))
+  (write-interface-list stream (:interfaces    java-class))
+  (write-field-list     stream (:fields        java-class))
+  (write-method-list    stream (:methods       java-class))
+  (write-attribute-list stream (:attributes    java-class))
   stream)
