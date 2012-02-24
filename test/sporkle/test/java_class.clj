@@ -125,22 +125,22 @@
         "Minimal class should have no fields")))
 
 
-(deftest test-write-class-header
-  (with-open [stream (ByteArrayOutputStream.)]
-    (is (= stream (write-class-header stream))
-        "write-class-header should return the stream it writes to"))
+(comment (deftest test-write-class-header
+           (with-open [stream (ByteArrayOutputStream.)]
+             (is (= stream (write-class-header stream))
+                 "write-class-header should return the stream it writes to"))
 
-  (with-open [stream (ByteArrayOutputStream.)]
-    (is (= [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32]
-           (seq (.toByteArray (write-class-header stream))))
-        "write-class-header should write a valid and correct class header")))
+           (with-open [stream (ByteArrayOutputStream.)]
+             (is (= [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32]
+                    (seq (.toByteArray (write-class-header stream))))
+                 "write-class-header should write a valid and correct class header"))))
 
 
-(deftest test-write-simplest-complete-class
-  (testing "writing of a complete, mostly-empty classfile that can be loaded by the JVM"
-    (with-open [stream (ByteArrayOutputStream.)]
-      
-      (let [bytes (.toByteArray (write-java-class stream (java-class "Nothing")))
-            clazz (.loadBytes (ByteLoader.) bytes)]
-        
-        (is (class? clazz) "written bytes should be loadable into a Java class")))))
+(comment (deftest test-write-simplest-complete-class
+           (testing "writing of a complete, mostly-empty classfile that can be loaded by the JVM"
+             (with-open [stream (ByteArrayOutputStream.)]
+               
+               (let [bytes (.toByteArray (write-java-class stream (java-class "Nothing")))
+                     clazz (.loadBytes (ByteLoader.) bytes)]
+                 
+                 (is (class? clazz) "written bytes should be loadable into a Java class"))))))

@@ -115,6 +115,7 @@
   (is (= -127 (byte-from-unsigned 0x81)) "0x81 is one greater than the minimum value")
   (is (= -1   (byte-from-unsigned 0xFF)) "0xFF is the highes negative number, or -1"))
 
+
 (deftest test-write-bytes
   
   (with-open [stream (ByteArrayOutputStream.)]
@@ -127,6 +128,6 @@
 
   (testing "with arguments > 0x80"
     (with-open [stream (ByteArrayOutputStream.)]
-      (is (= [0x80 0x81 0x20 0xFF] (seq (.toByteArray (write-bytes stream [0x80 0x81 0x20 0xFF]))))))
+      (is (= [-0x80 -0x7F 0x20 -0x01] (seq (.toByteArray (write-bytes stream [0x80 0x81 0x20 0xFF])))) "Written bytes should be signed interpretations"))
     (with-open [stream (ByteArrayOutputStream.)]
-      (is (= MAGIC_BYTES (seq (.toByteArray (write-bytes stream MAGIC_BYTES))))))))
+      (is (= [-54 -2 -70 -66] (seq (.toByteArray (write-bytes stream MAGIC_BYTES)))) "Written bytes should match the known file values for the classfile magic number"))))
