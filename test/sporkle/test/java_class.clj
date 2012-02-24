@@ -112,17 +112,18 @@
     (is (= "java/lang/Object" (super-class-name clazz))
         "super-class member should correctly resolve to Object")
 
-    ;; TODO implement write-java-class and find out!
-    ;; NEXT though, implement disassemble-bytecode and look at Nothing.<init>()
-    (comment "Is this strictly necessary?"
-             (is (= 1 (count (:methods clazz)))
-                 "class should exactly have one method"))
-
-    (comment (is (= "<init>" (get-name clazz (first (:methods clazz))))
-                 "class' only method should be a constructor"))
-
+    (is (empty? (:interfaces clazz)))
+    (is (empty? (:methods clazz)))
     (is (empty? (:fields clazz))
         "Minimal class should have no fields")))
+
+
+(deftest test-implement-interface
+  (let [clazz (implement-interface (java-class "Nothing") "java/lang/Serializable")]
+    (is (= 1 (count (:interfaces clazz)))
+        "class should now have one interface")
+    (is (= "java/lang/Serializable" (get-name clazz (get-constant clazz (bytes-to-integral-type (first (:interfaces clazz))))))
+        "first interface should be an index that points to something in the constant pool with the right name")))
 
 
 (deftest test-write-class-header
@@ -144,12 +145,12 @@
 
   (comment (testing "reading back what we've written out"
 
-             (with-open [stream (ByteArrayOutputStream.)]
+              (with-open [stream (ByteArrayOutputStream.)]
 
-               (let [class-map-src  (java-class "Nothing")
-                     bytes          (.toByteArray (write-java-class stream class-map-src))
-                     class-map-dest (read-java-class bytes)]
-                 (is (= class-map-src class-map-dest) "Should be able to unpack the same class from bytes we've put in"))))))
+                (let [class-map-src  (java-class "Nothing")
+                      bytes          (.toByteArray (write-java-class stream class-map-src))
+                      class-map-dest (read-java-class bytes)]
+                  (is (= class-map-src class-map-dest) "Should be able to unpack the same class from bytes we've put in"))))))
 
 
 (deftest test-write-simplest-complete-class
