@@ -261,9 +261,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
          
          (recur (into (conj acc opcode-name) (take argwidth remainder)) (drop argwidth remainder))))))
 
-
-
-
 ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test
@@ -414,12 +411,12 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 ; unit test?
 (defn write-constant-pool-entry [stream entry]
-  (write-bytes stream (constant-pool-entry-bytes entry)))
+  (write-bytes stream (map byte-from-unsigned (constant-pool-entry-bytes entry))))
 
-(defn write-interface-list [stream])
-(defn write-field-list [stream])
-(defn write-method-list [stream])
-(defn write-attribute-list [stream])
+(defn write-interface-list [stream interfaces-list])
+(defn write-field-list [stream field-list])
+(defn write-method-list [stream method-list])
+(defn write-attribute-list [stream attrib-list])
 
 (defn write-java-class [stream java-class]
   
@@ -432,4 +429,5 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (write-interface-list stream (:interfaces   java-class))
   (write-field-list     stream (:fields       java-class))
   (write-method-list    stream (:methods      java-class))
-  (write-attribute-list stream (:attributes   java-class)))
+  (write-attribute-list stream (:attributes   java-class))
+  stream)
