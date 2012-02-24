@@ -415,10 +415,16 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (doseq [p pool]
     (write-constant-pool-entry stream p)))
 
-(defn write-interface-list [stream interfaces-list])
-(defn write-field-list [stream field-list])
-(defn write-method-list [stream method-list])
-(defn write-attribute-list [stream attrib-list])
+
+(defn write-thing-list [stream write-fn thing-list]
+  (write-bytes stream (two-byte-index (count thing-list)))
+  (doseq [t thing-list]
+    (write-fn stream t)))
+
+(defn write-interface [stream field])
+(defn write-field [stream field])
+(defn write-method [stream method])
+(defn write-attribute [stream attrib])
 
 (defn write-java-class [stream java-class]
   
@@ -428,8 +434,8 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (write-bytes          stream (:this-class    java-class))
   (write-bytes          stream (:super-class   java-class))
   
-  (write-interface-list stream (:interfaces    java-class))
-  (write-field-list     stream (:fields        java-class))
-  (write-method-list    stream (:methods       java-class))
-  (write-attribute-list stream (:attributes    java-class))
+  (write-thing-list stream write-interface (:interfaces java-class))
+  (write-thing-list stream write-field     (:fields     java-class))
+  (write-thing-list stream write-method    (:methods    java-class))
+  (write-thing-list stream write-attribute (:attributes java-class))
   stream)
