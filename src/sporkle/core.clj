@@ -54,9 +54,9 @@
 
 (defn byte-from-unsigned [i]
   "Try and coerce an integer in the range Byte.MIN_VALUE, Byte.MAX_VALUE from an unsigned integer between 0x00 and 0xFF. Behaviour is undefined outside those values!"
-  (if (> i Byte/MAX_VALUE) ; try and assume it's unsigned
-    (+ 0x80 (- i))
-    i))
+  (let [sign (bit-and  0x80 i)
+        size (bit-and  0x7F i)]
+    (- size sign)))
 
 
 (def MAGIC_BYTES         [0xCA 0xFE 0xBA 0xBE])
@@ -104,7 +104,6 @@ Returns a pair [map, remainder], so it can nest within itself"
   (map vector aseq (iterate inc 0)))
 
 
-;; FIXME write a test
 (defn write-bytes [stream byte-seq]
   "Write the bytes from byte-seq into stream, and return stream"
   (doseq [b byte-seq] (.write stream b))

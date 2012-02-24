@@ -1,7 +1,8 @@
 (ns sporkle.test.core
   (:use [sporkle.core])
   (:use [clojure.test])
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io])
+  (:import  [java.io ByteArrayOutputStream]))
 
 (deftest test-byte-stream-seq
   (testing "byte-stream-seq's seqiness"
@@ -100,14 +101,32 @@
 
 
 (deftest test-each-with-index
+  (is (= [] (each-with-index [])) "should return empty seq when input is empty")
   (is (= [[:a 0] [:b 1] [nil 2] [:c 3]] (each-with-index [:a :b nil :c]))))
 
 
+(deftest test-byte-from-unsigned
+
+  (is (= 0   (byte-from-unsigned 0x00)) "0 is the simplest case")
+  (is (= 1   (byte-from-unsigned 0x01)) "1 is simple")
+  (is (= 127 (byte-from-unsigned 0x7F)) "127 is the highest positive number")
+
+  (is (= -128 (byte-from-unsigned 0x80)) "0x80 is the sign bit and minimum value")
+  (is (= -127 (byte-from-unsigned 0x81)) "0x81 is one greater than the minimum value")
+  (is (= -1   (byte-from-unsigned 0xFF)) "0xFF is the highes negative number, or -1"))
+
 (deftest test-write-bytes
   
-  (with-open [stream (java.io.ByteArrayOutputStream.)]
+  (with-open [stream (ByteArrayOutputStream.)]
     (is (= stream (write-bytes stream [1 2 3]))
         "write-bytes should return the stream it is writing to"))
 
-  (with-open [stream (java.io.ByteArrayOutputStream.)]
-    (is (= [1 2 3 4 5] (seq (.toByteArray (write-bytes stream [1 2 3 4 5])))))))
+  (testing "with arguments < 0x80"
+    (with-open [stream (ByteArrayOutputStream.)]
+      (is (= [1 2 3 4 5] (seq (.toByteArray (write-bytes stream [1 2 3 4 5])))))))
+
+  (testing "with arguments > 0x80"
+    (with-open [stream (ByteArrayOutputStream.)]
+      (is (= [0x80 0x81 0x20 0xFF] (seq (.toByteArray (write-bytes stream [0x80 0x81 0x20 0xFF]))))))
+    (with-open [stream (ByteArrayOutputStream.)]
+      (is (= MAGIC_BYTES (seq (.toByteArray (write-bytes stream MAGIC_BYTES))))))))
