@@ -119,10 +119,10 @@
 
 
 (deftest test-implement-interface
-  (let [clazz (implement-interface (java-class "Nothing") "java/lang/Serializable")]
+  (let [clazz (implement-interface (java-class "Nothing") "java/io/Serializable")]
     (is (= 1 (count (:interfaces clazz)))
         "class should now have one interface")
-    (is (= "java/lang/Serializable" (get-name clazz (get-constant clazz (bytes-to-integral-type (first (:interfaces clazz))))))
+    (is (= "java/io/Serializable" (get-name clazz (get-constant clazz (bytes-to-integral-type (first (:interfaces clazz))))))
         "first interface should be an index that points to something in the constant pool with the right name")))
 
 
@@ -160,4 +160,17 @@
       (let [bytes (.toByteArray (write-java-class stream (java-class "Nothing")))
             clazz (.loadBytes (ByteLoader.) bytes)]
         
-        (is (class? clazz) "written bytes should be loadable into a Java class")))))
+        (is (class? clazz)
+            "written bytes should be loadable into a Java class")
+        (is (not (.isAssignableFrom java.io.Serializable clazz))
+            "minimal class should not be Serializable")))))
+
+
+(deftest test-write-class-with-interface
+  (testing "writing of a complete, mostly-empty classfile that can be loaded by the JVM"
+    (with-open [stream (ByteArrayOutputStream.)]
+      
+      (let [bytes (.toByteArray (write-java-class stream (implement-interface (java-class "Nothing") "java/io/Serializable")))
+            clazz (.loadBytes (ByteLoader.) bytes)]
+        (is (.isAssignableFrom java.io.Serializable clazz)
+            "class should be Serializable, since we declared the interface")))))

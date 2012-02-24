@@ -433,8 +433,10 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (write-bytes          stream (:access-flags  java-class))
   (write-bytes          stream (:this-class    java-class))
   (write-bytes          stream (:super-class   java-class))
+
+  ; interfaces are just two-byte indices anyway
+  (write-thing-list stream write-bytes (:interfaces java-class))
   
-  (write-thing-list stream write-interface (:interfaces java-class))
   (write-thing-list stream write-field     (:fields     java-class))
   (write-thing-list stream write-method    (:methods    java-class))
   (write-thing-list stream write-attribute (:attributes java-class))
