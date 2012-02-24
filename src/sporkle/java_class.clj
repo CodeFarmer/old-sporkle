@@ -26,7 +26,7 @@
 
 (defn java-class [class-name]
 
-  ;; this serial redefinition of cp is definitely bad style. But what's the good style?
+  ;; this serial redefinition of cp is definitely bad style. But what's the good style? thread macro?
   
   (let [[cp this-idx]  (cp-add-class [] class-name)
         [cp super-idx] (cp-add-class cp "java/lang/Object")]
