@@ -265,7 +265,15 @@
 
     (let [java-class (read-java-class-file "test/fixtures/MethodNothing.class")]
       (is (= 2 (count (:methods java-class)))
-          "the class should return one method"))))
+          "the class should return one method")))
+
+  (testing "reading a Java class with attributes"
+
+    (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
+      (is  (= 1 (count (:attributes java-class)))
+           "The class should have one attribute (SourceFile)")
+      (is (not (empty? (:info (first (:attributes java-class)))))
+          "The first attribute should have info (ie., not be truncated as in issue #7"))))
 
 ;; information about fields or methods or... anything with a :name-index
 (deftest test-get-name

@@ -196,7 +196,7 @@
 (defn read-java-class-file [filename]
   "Convenience method; read a java-class map from a named file"
   (with-open [stream (io/input-stream filename)]
-    (read-java-class (byte-stream-seq stream))))
+    (read-java-class (doall (byte-stream-seq stream)))))
 
 
 ;; pass the constant pool, as some things evaluate to indices into it which should be followed
