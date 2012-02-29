@@ -114,3 +114,5 @@ Returns a pair [map, remainder], so it can nest within itself"
   [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
 
 
+(defn four-byte-count [i]
+  [(bit-and 0xFF000000 i) (bit-and 0x00FF00 i) (bit-and 0x0000FF00 i) (bit-and 0x000000FF i)])

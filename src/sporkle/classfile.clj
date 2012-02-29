@@ -119,8 +119,9 @@
       (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with nil tag")))
       (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))))
 
-;; getting constant values usefully
 
+
+;; this is going to become a defmulti, calling (for example) unpack-code-attribute
 (defn read-attribute [bytes]
   (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
     [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
@@ -431,11 +432,30 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (doseq [t thing-list]
     (write-fn stream t)))
 
+
 (defn write-interface [stream field])
 (defn write-field [stream field])
 (defn write-method [stream method])
 
-(defn write-attribute [stream attrib])
+
+(defmulti write-attribute #(attribute-name %2 %3))
+;; fall back, better hope you have a :info field
+(defmethod write-attribute :default [stream java-class attribute]
+  (write-bytes (:attribute-name-index attribute))
+  (write-bytes (four-byte-count (count (:info attribute))))
+  (write-bytes (:info attribute)))
+
+;; fuck, how do you calculate the size of an unpacked attribute? which itself can have attributes? this will make me sad.
+(defn write-attributes
+  "Write the attributes of anything (class, method, attribute, etc) with reference to the constant pool of java-class for decoding name-indices"
+  ([stream java-class]
+     (write-attributes stream java-class java-class))
+  ([stream java-class thing]
+     (let [attribs (:attributes thing)]
+       (write-bytes stream (two-byte-index (count attribs)))
+       (doseq [a attribs]
+         (write-attribute stream java-class a))))) 
+
 
 (defn write-java-class [stream java-class]
   
@@ -444,11 +464,11 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (write-bytes          stream (:access-flags  java-class))
   (write-bytes          stream (:this-class    java-class))
   (write-bytes          stream (:super-class   java-class))
-
-  ; interfaces are just two-byte indices anyway
+  
+                                        ; interfaces are just two-byte indices anyway
   (write-thing-list stream write-bytes (:interfaces java-class))
   
   (write-thing-list stream write-field     (:fields     java-class))
   (write-thing-list stream write-method    (:methods    java-class))
-  (write-thing-list stream write-attribute (:attributes java-class))
+  (write-attributes stream java-class)
   stream)
