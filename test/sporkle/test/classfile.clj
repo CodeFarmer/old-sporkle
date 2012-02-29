@@ -280,10 +280,14 @@
   (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))))
 
+;; this test is for various little bits of get-whatever functionality for the annoyingly differently-structured bits of the classfile struct
 (deftest test-getters
   (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
     (is (= "<init>" (get-name java-class (first (:methods java-class)))))
-    (is (= "()V" (descriptor java-class (first (:methods java-class)))))))
+    (is (= "()V" (descriptor java-class (first (:methods java-class)))))
+
+    (is (= "SourceFile" (attribute-name java-class (first (:attributes java-class))))
+        "attribute-name should return 'SourceFile' for a classfile known to have it as a first attrib")))
 
 
 (deftest test-unpack-code-attribute

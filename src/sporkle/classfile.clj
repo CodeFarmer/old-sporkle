@@ -298,6 +298,14 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
       (indexed-name java-class super-class))))
 
 
+;; only necessary because attributes don't have a name-index
+(defn attribute-name [java-class attribute]
+  "see get-name"
+  (if (nil? (:attribute-name-index attribute))
+    nil
+    (constant-value java-class (get-constant java-class (bytes-to-integral-type (:attribute-name-index attribute))))))
+
+
 (defn interface-names [java-class]
   "Return an array of strings that are the qualified classnames of a class' implemented interfaces"
   (map (partial indexed-name java-class) (:interfaces java-class)))
