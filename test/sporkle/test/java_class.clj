@@ -136,7 +136,6 @@
            (seq (.toByteArray (write-class-header stream))))
         "write-class-header should write a valid and correct class header")))
 
-
 (deftest test-write-java-class
   
   (with-open [stream (ByteArrayOutputStream.)]

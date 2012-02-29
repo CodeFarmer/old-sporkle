@@ -147,7 +147,7 @@
   (testing "reading a generic attribute from a byte stream with trailing bytes"
 
     (let [[attr remainder] (read-attribute [0x00 0x01 0x00 0x00 0x00 0x03 0x0A 0x0B 0x0C 0x0D])]
-      (is (= 0x0001 (:attribute-name-index attr))
+      (is (= [0x00 01] (:attribute-name-index attr))
           "first two bytes should be the atribute name index")
       (is (= [0x0A 0x0B 0x0C] (:info attr))
           "info should contain the right three bytes")
@@ -296,7 +296,7 @@
       (is (not (nil? code-attrib))
           "Code attribute should not be nil")
 
-      (is (= (:attribute-name-index code-attrib)
+      (is (= (bytes-to-integral-type (:attribute-name-index code-attrib))
              (cp-find-utf8 (:constant-pool java-class) "Code"))
           "Code attribute should have name 'Code'")
 

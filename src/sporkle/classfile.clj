@@ -122,7 +122,7 @@
 ;; getting constant values usefully
 
 (defn read-attribute [bytes]
-  (let [name-index (bytes-to-integral-type (take 2 bytes)) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
+  (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
     [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
 
 
@@ -327,7 +327,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
       (if (empty? attribs)
         nil
         (let [attrib (first attribs)]
-          (if (= idx (:attribute-name-index attrib))
+          (if (= idx (bytes-to-integral-type (:attribute-name-index attrib)))
             attrib
             (recur (rest attribs))))))))
 
@@ -416,6 +416,8 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
     (write-constant-pool-entry stream p)))
 
 
+;; this is going to be annoying, since attrs will require the class for
+;; dispatch!
 (defn write-thing-list [stream write-fn thing-list]
   (write-bytes stream (two-byte-index (count thing-list)))
   (doseq [t thing-list]
@@ -424,6 +426,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn write-interface [stream field])
 (defn write-field [stream field])
 (defn write-method [stream method])
+
 (defn write-attribute [stream attrib])
 
 (defn write-java-class [stream java-class]
