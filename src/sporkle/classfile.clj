@@ -437,15 +437,41 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn write-field [stream field])
 (defn write-method [stream method])
 
+;; attribute-length ;; ;; attribute-length ;; ;; attribute-length ;; 
+
+(defmulti attribute-length attribute-name)
+
+(defmethod attribute-length "Code" [java-class attribute]
+  (+ 18 ; fields
+     (count (:code attribute))
+     (* 8 (count (:exception-table attribute)))
+     (reduce + 0 (map attribute-length (:attributes attribute)))))
+
+(defmethod attribute-length :default [java-class attribute]
+  (let [info (:info attribute)]
+    (if (nil? info)
+      (throw (IllegalArgumentException. "Fell through to default attribute-length implementation, but attribute has no info"))
+      (count (:info attribute)))))
+
+;; write-attribute ;; ;; write-attribute ;; ;; write-attribute ;;
 
 (defmulti write-attribute #(attribute-name %2 %3))
-;; fall back, better hope you have a :info field
-(defmethod write-attribute :default [stream java-class attribute]
-  (write-bytes (:attribute-name-index attribute))
-  (write-bytes (four-byte-count (count (:info attribute))))
-  (write-bytes (:info attribute)))
 
-;; fuck, how do you calculate the size of an unpacked attribute? which itself can have attributes? this will make me sad.
+(defmethod write-attribute "Code" [stream java-class attribute]
+  (let [subattr-count (reduce + 0 (map attribute-length) (:attributes attribute))]
+    (write-bytes stream (:attribute-name-index attribute))
+    (write-bytes (- (attribute-length java-class attribute) 6)))
+  ;; FIXME this is what you were doing
+  )
+
+(defmethod write-attribute :default [stream java-class attribute]
+  (let [info (:info attribute)]
+    (if (nil? info)
+      (throw (IllegalArgumentException. "Fell through to default write-attribute implementation, but attribute has no info")))
+    (write-bytes (:attribute-name-index attribute))
+    (write-bytes (four-byte-count (count (:info attribute))))
+    (write-bytes (:info attribute))))
+
 (defn write-attributes
   "Write the attributes of anything (class, method, attribute, etc) with reference to the constant pool of java-class for decoding name-indices"
   ([stream java-class]
