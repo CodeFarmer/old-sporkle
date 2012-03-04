@@ -201,46 +201,41 @@
 
 
 ;; pass the constant pool, as some things evaluate to indices into it which should be followed
-(defmulti constant-value #(tag %2))
+(defmulti cp-entry-value #(tag %2))
 
-;; it would be nice to be able to this,
-;; for the case when you know you won't need to follow references - that is, primitives and
-;; CONSTANT_Utf8s
-;; (defn constant-value [pool-entry]
-;;  (constant-value pool-entry nil))
-
-(defmethod constant-value CONSTANT_Utf8 [java-class pool-entry]
+(defmethod cp-entry-value CONSTANT_Utf8 [constant-pool pool-entry]
   (str/join (map char (:bytes pool-entry))))
 
-(defmethod constant-value CONSTANT_Integer [java-class pool-entry]
+(defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
   (bytes-to-integral-type (:bytes pool-entry)))
 
-(defmethod constant-value CONSTANT_Float [java-class pool-entry]
+(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
   (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
 
-;; FIXME this borked before Float was implemented, why?
-(defmethod constant-value :default [java-class pool-entry]
+(defmethod cp-entry-value :default [java-class pool-entry]
   (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
 
+(defn constant-value
+  ([constant-pool pool-index]
+     (cp-entry-value constant-pool (nth constant-pool (dec pool-index)))))
 
 ;; this is necessary for two reasons
 ;; 1) The indices are 1-based!
 ;; 2) Some constant pool entries count for two spaces!
-;;
-;; therefore, this implementation WILL change - it is WRONG right now
-(defn get-constant [java-class index]
-  (nth (:constant-pool java-class) (dec index)))
+
+(defn get-constant [constant-pool index]
+  (nth constant-pool (dec index)))
 
 
 ;; for something with a name-index, get its name
-(defn get-name [java-class thing]
+(defn get-name [constant-pool thing]
   "For anything that has a name-index in its struct, return the string represented in the class by that name-index. If no name-index, return nil.
 
 NOTE not called 'name' like the others of its ilk in order not to clash"
 
   (if (nil? (:name-index thing))
     nil
-    (constant-value java-class (get-constant java-class (bytes-to-integral-type (:name-index thing))))))
+    (constant-value constant-pool (bytes-to-integral-type (:name-index thing)))))
 
 
 ;; dissassembly
@@ -274,37 +269,37 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
     [{:code info} (drop (+ 4 count) bytes)]))
 
 
-(defn descriptor [java-class meth]
+(defn descriptor [constant-pool meth]
   "Return the descriptor string for a method (or anything else with a descriptor-index"
-  (constant-value java-class (get-constant java-class (bytes-to-integral-type (:descriptor-index meth)))))
+  (constant-value constant-pool (bytes-to-integral-type (:descriptor-index meth))))
 
 
 ;; consider making this internal
-(defn indexed-name [java-class index-bytes]
-  "Given a java-class and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
-  (get-name java-class (get-constant java-class (bytes-to-integral-type index-bytes))))
+(defn indexed-name [constant-pool index-bytes]
+  "Given a constant pool and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
+  (get-name constant-pool (get-constant constant-pool (bytes-to-integral-type index-bytes))))
 
 
 (defn class-name [java-class]
   (let [this-class (:this-class java-class)]
     (if (nil? this-class)
       nil
-      (indexed-name java-class this-class))))
+      (indexed-name (:constant-pool java-class) this-class))))
 
 ;; FIXME REFACTOR this is the same as class-name
 (defn super-class-name [java-class]
   (let [super-class (:super-class java-class)]
     (if (nil? super-class)
       nil
-      (indexed-name java-class super-class))))
+      (indexed-name (:constant-pool java-class) super-class))))
 
 
 ;; only necessary because attributes don't have a name-index
-(defn attribute-name [java-class attribute]
+(defn attribute-name [constant-pool attribute]
   "see get-name"
   (if (nil? (:attribute-name-index attribute))
     nil
-    (constant-value java-class (get-constant java-class (bytes-to-integral-type (:attribute-name-index attribute))))))
+    (constant-value constant-pool (bytes-to-integral-type (:attribute-name-index attribute)))))
 
 
 (defn interface-names [java-class]
@@ -441,30 +436,11 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 (defmulti attribute-length attribute-name)
 
-(defmethod attribute-length "Code" [java-class attribute]
-  (+ 18 ; fields
-     (count (:code attribute))
-     (* 8 (count (:exception-table attribute)))
-     (reduce + 0 (map attribute-length (:attributes attribute)))))
-
-(defmethod attribute-length :default [java-class attribute]
-  (let [info (:info attribute)]
-    (if (nil? info)
-      (throw (IllegalArgumentException. "Fell through to default attribute-length implementation, but attribute has no info"))
-      (count (:info attribute)))))
-
 ;; write-attribute ;; ;; write-attribute ;; ;; write-attribute ;;
 
 (defmulti write-attribute #(attribute-name %2 %3))
 
-(defmethod write-attribute "Code" [stream java-class attribute]
-  (let [subattr-count (reduce + 0 (map attribute-length) (:attributes attribute))]
-    (write-bytes stream (:attribute-name-index attribute))
-    (write-bytes (- (attribute-length java-class attribute) 6)))
-  ;; FIXME this is what you were doing
-  )
-
-(defmethod write-attribute :default [stream java-class attribute]
+(defmethod write-attribute :default [stream constant-pool attribute]
   (let [info (:info attribute)]
     (if (nil? info)
       (throw (IllegalArgumentException. "Fell through to default write-attribute implementation, but attribute has no info")))
@@ -475,12 +451,12 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn write-attributes
   "Write the attributes of anything (class, method, attribute, etc) with reference to the constant pool of java-class for decoding name-indices"
   ([stream java-class]
-     (write-attributes stream java-class java-class))
-  ([stream java-class thing]
+     (write-attributes stream (:constant-pool java-class) java-class))
+  ([stream constant-pool thing]
      (let [attribs (:attributes thing)]
        (write-bytes stream (two-byte-index (count attribs)))
        (doseq [a attribs]
-         (write-attribute stream java-class a))))) 
+         (write-attribute stream constant-pool a))))) 
 
 
 (defn write-java-class [stream java-class]

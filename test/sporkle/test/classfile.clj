@@ -20,9 +20,7 @@
       (is (= CONSTANT_Utf8 (tag entry))
           "should correctly set the tag")
       (is (= 12 (count (:bytes entry)))
-          "should read the two-byte length correctly")
-      (is (= "Nothing.java" (constant-value nil entry))
-          "should give us back bytes that can be turned into a Java String")))
+          "should read the two-byte length correctly")))
   
   (testing "Reading an integer constant, with a trailing byte"
 
@@ -30,7 +28,7 @@
       
       (is (= [0xFF] rest)
           "should correctly return the remaining bytes")
-      (is (= 0x00100101 (constant-value nil entry))
+      (is (= 0x00100101 (cp-entry-value nil entry))
           "should the two bytes into an integer")))
 
   (testing "reading a method ref entry, with a trailing byte"
@@ -85,7 +83,7 @@
           "should have four bytes")
       (is (= [0xFF] rest)
           "should correctly return the remaining byte")
-      (is (= 2.5 (constant-value nil entry))
+      (is (= 2.5 (cp-entry-value nil entry))
           "should be able to read the bytes into a float")))
 
   (testing "Reading a long constant, with a trailing byte"
@@ -278,15 +276,16 @@
 ;; information about fields or methods or... anything with a :name-index
 (deftest test-get-name
   (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
-    (is (= "<init>" (get-name java-class (first (:methods java-class)))))))
+    (is (= "<init>" (get-name (:constant-pool java-class) (first (:methods java-class)))))))
 
 ;; this test is for various little bits of get-whatever functionality for the annoyingly differently-structured bits of the classfile struct
 (deftest test-getters
-  (let [java-class (read-java-class-file "test/fixtures/Nothing.class")]
-    (is (= "<init>" (get-name java-class (first (:methods java-class)))))
-    (is (= "()V" (descriptor java-class (first (:methods java-class)))))
+  (let [java-class (read-java-class-file "test/fixtures/Nothing.class")
+        constant-pool (:constant-pool java-class)]
+    (is (= "<init>" (get-name constant-pool (first (:methods java-class)))))
+    (is (= "()V" (descriptor constant-pool (first (:methods java-class)))))
 
-    (is (= "SourceFile" (attribute-name java-class (first (:attributes java-class))))
+    (is (= "SourceFile" (attribute-name constant-pool (first (:attributes java-class))))
         "attribute-name should return 'SourceFile' for a classfile known to have it as a first attrib")))
 
 
@@ -295,13 +294,14 @@
   (testing "Unpacking the code attribute of an empty <init> method in an empty class"
     
     (let [java-class (read-java-class-file "test/fixtures/Nothing.class")
-          code-attrib (unpack-code-attribute (attribute-named java-class (first (:methods java-class)) "Code"))]
+          constant-pool (:constant-pool java-class)
+          code-attrib (attribute-named constant-pool (first (:methods java-class)) "Code")]
 
       (is (not (nil? code-attrib))
           "Code attribute should not be nil")
 
       (is (= (bytes-to-integral-type (:attribute-name-index code-attrib))
-             (cp-find-utf8 (:constant-pool java-class) "Code"))
+             (cp-find-utf8 constant-pool "Code"))
           "Code attribute should have name 'Code'")
 
       (is (= [0x00 0x01] (:max-stack code-attrib))
@@ -321,21 +321,21 @@
 
       (is (coll? (:attributes code-attrib))
           "Code attribute should itself have attributes")
-      (is (not (nil? (attribute-named java-class code-attrib "LineNumberTable")))
+      (is (not (nil? (attribute-named constant-pool code-attrib "LineNumberTable")))
           "The code attribute from the example code happens to have a line number table"))))
 
 ;; TODO: write a test for line number tables, local variables, exceptions and so on.
 
 
 ;; This is going to end up quite a large test, but only as g-c-v gets implemented (once I figure out what it should really return).
-(deftest test-get-constant-value
+(deftest test-constant-value
   
   (let [clazz (read-java-class-file "test/fixtures/ClassWithAllConstantPoolTypes.class")
         constant-pool (:constant-pool clazz)]
     
     (testing "utf-8 constant"
-      (is (= "java/util/Set" (constant-value clazz (nth constant-pool 56)))
-          "The 56th constant is the canonical name of java.util.Set, and should be returned as a String"))
+      (is (= "java/util/Set" (constant-value constant-pool 57))
+          "The 57th constant is the canonical name of java.util.Set, and should be returned as a String"))
 
     (comment "TODO and aaaaalll the rest of them, just need to figure out what shape they should be")))
 

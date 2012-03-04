@@ -119,10 +119,11 @@
 
 
 (deftest test-implement-interface
-  (let [clazz (implement-interface (java-class "Nothing") "java/io/Serializable")]
+  (let [clazz (implement-interface (java-class "Nothing") "java/io/Serializable")
+        constant-pool (:constant-pool clazz)]
     (is (= 1 (count (:interfaces clazz)))
         "class should now have one interface")
-    (is (= "java/io/Serializable" (get-name clazz (get-constant clazz (bytes-to-integral-type (first (:interfaces clazz))))))
+    (is (= "java/io/Serializable" (get-name constant-pool (get-constant constant-pool (bytes-to-integral-type (first (:interfaces clazz))))))
         "first interface should be an index that points to something in the constant pool with the right name")))
 
 
