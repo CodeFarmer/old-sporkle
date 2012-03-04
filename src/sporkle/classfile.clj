@@ -71,6 +71,29 @@
   (bytes-to-integral-type (:access-flags unpacked-struct)))
 
 
+;; pass the constant pool, as some things evaluate to indices into it which should be followed
+(defmulti cp-entry-value #(tag %2))
+
+(defmethod cp-entry-value CONSTANT_Utf8 [constant-pool pool-entry]
+  (str/join (map char (:bytes pool-entry))))
+
+(defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
+  (bytes-to-integral-type (:bytes pool-entry)))
+
+(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
+  (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
+
+(defmethod cp-entry-value :default [java-class pool-entry]
+  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
+
+(defn constant-value
+  ([constant-pool pool-index]
+     (cp-entry-value constant-pool (nth constant-pool (dec pool-index)))))
+
+;; this is necessary for two reasons
+;; 1) The indices are 1-based!
+;; 2) Some constant pool entries count for two spaces!
+
 ;; conforms to the expectations of read-stream-maplets
 ;; FIXME document this
 (defmulti read-constant-pool-entry first)
@@ -109,22 +132,11 @@
 (defmethod read-constant-pool-entry CONSTANT_Double [bytes]
   (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
 
-;; This is almost certainly fucked and wrong
-(comment (defmethod read-constant-pool-entry 0 [bytes]
-           (unpack-struct [[:tag 1] [:bytes 2]] bytes)))
-
 (defmethod read-constant-pool-entry :default [bytes]
   (let [tag (first bytes)]
     (if (nil? tag)
       (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with nil tag")))
       (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))))
-
-
-
-;; this is going to become a defmulti, calling (for example) unpack-code-attribute
-(defn read-attribute [bytes]
-  (let [name-index (take 2 bytes) count (bytes-to-integral-type (take 4 (drop 2 bytes))) remainder (drop 6 bytes)]
-    [{:attribute-name-index name-index :info (take count remainder)} (drop count remainder)]))
 
 
 (defn read-struct-list-maplet
@@ -139,10 +151,56 @@
          (let [[descriptor remainder] (readfn bytes)]
            (recur (conj acc descriptor) (dec count) key readfn remainder)))))
 
+;; read-attribute ;; ;; read-attribute ;; ;; read-attribute ;; ;; read-attribute ;; ;; read-attribute ;;
+
+;; forward declaration; what is the correct/idiomatic way to do this?
+(def read-attribute)
+
+;; attributes are structured according to their names
+
+(defn -attribute-info-kind [constant-pool index-bytes _]
+  (if (nil? constant-pool)
+    :default ;; useful for debugging or testing
+    (constant-value constant-pool (bytes-to-integral-type index-bytes))))
+
+(defmulti unpack-attribute-info -attribute-info-kind)
+
+(defn read-code-maplet [bytes]
+  (let [count (bytes-to-integral-type (take 4 bytes))
+        info (take count (drop 4 bytes))]
+    [{:code info} (drop (+ 4 count) bytes)]))
+
+(defn read-exception-table-maplet [bytes]
+  (read-struct-list-maplet :exception-table #(unpack-struct [[:start-pc 2] [:end-pc 2] [:handler-pc 2] [:catch-type 2]] %) bytes))
 
 ;; this one comes up a few times
-(defn read-attributes-maplet [bytes]
-  (read-struct-list-maplet :attributes read-attribute bytes))
+(defn read-attributes-maplet [constant-pool bytes]
+  (read-struct-list-maplet :attributes (partial read-attribute constant-pool) bytes))
+
+(defmethod unpack-attribute-info "Code" [constant-pool name-index info-bytes]
+  (first
+   (read-stream-maplets
+    [#(unpack-struct [[:max-stack 2] [:max-locals 2]] %)
+     read-code-maplet
+     read-exception-table-maplet
+     (partial read-attributes-maplet constant-pool)]
+    info-bytes)))
+
+(defmethod unpack-attribute-info :default [constant-pool name-index info-bytes]
+  {:info info-bytes})
+
+(defn read-attribute [constant-pool bytes]
+
+  (let [name-index (take 2 bytes)
+        count (bytes-to-integral-type (take 4 (drop 2 bytes)))
+        remainder (drop 6 bytes)]
+
+    [(into {:attribute-name-index name-index}
+           (unpack-attribute-info constant-pool name-index (take count remainder)))
+     (drop count remainder)]))
+
+;; ;;
+
 
 
 (defn read-cp-entry-list-maplet
@@ -162,10 +220,11 @@
     (read-cp-entry-list-maplet [] count :constant-pool read-constant-pool-entry remainder)))
 
 
-(defn read-field-or-method-info [bytes]
+;; constant-pool is needed for read-attributes
+(defn read-field-or-method-info [constant-pool bytes]
   (read-stream-maplets
    [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
-    read-attributes-maplet]
+    (partial read-attributes-maplet constant-pool)]
    bytes))
 
 
@@ -182,46 +241,31 @@
 
 ;; the overall stream-to-class function
 (defn read-java-class [bytes]
+  ;; need to read the constant pool first, mostly for the benefit of attribute unpacking logic
+  (let [[partial-class remainder]
+        (read-stream-maplets
+         [#(unpack-struct [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]] %)
+          read-constant-pool-maplet]
+         bytes)
+        constant-pool (:constant-pool partial-class)]
 
-  (first
-   (read-stream-maplets
-    [#(unpack-struct [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]] %)
-     read-constant-pool-maplet
-     #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
-     #(read-struct-list-maplet :interfaces read-byte-pair %)
-     #(read-struct-list-maplet :fields     read-field-or-method-info %)
-     #(read-struct-list-maplet :methods    read-field-or-method-info %)
-     read-attributes-maplet]
-    bytes)))
+    (into partial-class
+          (first
+           (read-stream-maplets
+            [#(unpack-struct [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]] %)
+             read-constant-pool-maplet
+             #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
+             #(read-struct-list-maplet :interfaces read-byte-pair %)
+             #(read-struct-list-maplet :fields     (partial read-field-or-method-info constant-pool) %)
+             #(read-struct-list-maplet :methods    (partial read-field-or-method-info constant-pool) %)
+             (partial read-attributes-maplet constant-pool)]
+            bytes)))))
 
 (defn read-java-class-file [filename]
   "Convenience method; read a java-class map from a named file"
   (with-open [stream (io/input-stream filename)]
     (read-java-class (doall (byte-stream-seq stream)))))
 
-
-;; pass the constant pool, as some things evaluate to indices into it which should be followed
-(defmulti cp-entry-value #(tag %2))
-
-(defmethod cp-entry-value CONSTANT_Utf8 [constant-pool pool-entry]
-  (str/join (map char (:bytes pool-entry))))
-
-(defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
-  (bytes-to-integral-type (:bytes pool-entry)))
-
-(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
-  (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
-
-(defmethod cp-entry-value :default [java-class pool-entry]
-  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
-
-(defn constant-value
-  ([constant-pool pool-index]
-     (cp-entry-value constant-pool (nth constant-pool (dec pool-index)))))
-
-;; this is necessary for two reasons
-;; 1) The indices are 1-based!
-;; 2) Some constant pool entries count for two spaces!
 
 (defn get-constant [constant-pool index]
   (nth constant-pool (dec index)))
@@ -243,7 +287,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   ([code-data]
      "Given the raw bytes of a code attribute, return them as a vector of :opcode keywords with the correct number of integer arguments per opcode.
 
-(friendly-code (:code (unpack-code-attribute (attribute-named clazz (first (:methods clazz)) \"Code\"))))"
+(friendly-code (:code (unpack-code-attribute (attribute-named (:constant-pool clazz) (first (:methods clazz)) \"Code\"))))"
 
      (friendly-code [] code-data))
 
@@ -262,11 +306,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test
 
-
-(defn read-code-maplet [bytes]
-  (let [count (bytes-to-integral-type (take 4 bytes))
-        info (take count (drop 4 bytes))]
-    [{:code info} (drop (+ 4 count) bytes)]))
 
 
 (defn descriptor [constant-pool meth]
@@ -324,9 +363,9 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
 
 
-(defn attribute-named [java-class thing name]
-  "Retrieve the :attributes member of thing whose attribute-name-index corresponds to the location of 'name' in the constant pool of java-class"
-  (when-let [idx (cp-find-utf8 (:constant-pool java-class) name)]
+(defn attribute-named [constant-pool thing name]
+  "Retrieve the :attributes member of thing whose attribute-name-index corresponds to the location of 'name' in the constant pool"
+  (when-let [idx (cp-find-utf8 constant-pool name)]
     (loop [attribs (seq (:attributes thing))]
       (if (empty? attribs)
         nil
@@ -335,23 +374,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
             attrib
             (recur (rest attribs))))))))
 
-
-(defn read-exception-table-maplet [bytes]
-  (read-struct-list-maplet :exception-table #(unpack-struct [[:start-pc 2] [:end-pc 2] [:handler-pc 2] [:catch-type 2]] %) bytes))
-
-
-(defn unpack-code-attribute [attribute]
-  "Unpack a code-attribute structure from the info field of a more general attribute (you know you want to do this because you used (get-attribute-named \"Code\"))"
-
-  ;; TODO implement unpacking of LineNumberTable and LocalVariableTable sub-attributes?
-  (into attribute
-    (first
-     (read-stream-maplets
-      [#(unpack-struct [[:max-stack 2] [:max-locals 2]] %)
-       read-code-maplet
-       read-exception-table-maplet
-       read-attributes-maplet]
-       (:info attribute)))))
 
 
 ;; writing classfiles
