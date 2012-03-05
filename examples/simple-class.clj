@@ -16,15 +16,20 @@
      (field NAME String))))
 
   (public
-   (method "countListAndHashMap" [java.util.List java.util.HashMap]
-           [:aload_1
-            :invokeinterface (method-ref java.util.List "size" "()I")
-            :istore_3
-            :aload_2
-            :invokevirtual 0 15
-            :invokeinterface 0 16 1 0
-            :istore 4
-            :iload_3
-            :iload 4
-            :iadd
-            :ireturn])))
+   
+   (let [size (interface-method-ref (interface-method-ref int java.util.List "size" []) 1 0)]
+     
+     (method int "countListAndHashMap" [java.util.List java.util.HashMap]
+             
+             [:aload_1
+              :invokeinterface size 1 0
+              :istore_3
+              :aload_2
+              :invokevirtual   (method-ref java.util.Set java.util.HashMap "keySet" [])
+              ;; I wonder, could I compact this and the let-size down to Collection.size()?
+              :invokeinterface (interface-method-ref int java.util.Set "size" []) 1 0
+              :istore          4
+              :iload_3
+              :iload           4
+              :iadd
+              :ireturn]))))
