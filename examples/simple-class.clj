@@ -8,9 +8,14 @@
  (implements [java.io.Serializable, sporkle.SimpleInterface])
  (extends    [java.lang.String])
 
- (static
-  (final
-   (field NAME String)))
+ (public
+
+  (field x Integer)
+  (field  y Integer)
+
+  (static
+   (final
+    (field NAME String))))
 
 
  (public
