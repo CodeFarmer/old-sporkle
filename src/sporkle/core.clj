@@ -12,7 +12,7 @@
       (cons b (lazy-seq (byte-stream-seq stream))))))
 
 (defn read-stream-to-byte-array [stream]
-  "FIXME this should not be necessary; either that or ditch byte-stream-seq (which maybe doesn't really need to be lazy)"
+  "FIXME this should not be necessary; either that or ditch byte-stream-seq (which maybe doesn't really need to be lazy). Or at least buffer it, this will be slow reading big things (will it ever read big things?)."
   (let [baos (java.io.ByteArrayOutputStream.)]
     (loop [b (.read stream)]
       (if (= b -1)
@@ -35,6 +35,7 @@
        acc
        (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
 
+
 (defn bytes-to-integral-type
 
   "Given a big-endian stream of bytes, convert those to a long of the correct signed value"
@@ -51,14 +52,16 @@
        (- acc)
        (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
 
-
 (defn byte-from-unsigned [i]
   "Try and coerce an integer in the range Byte.MIN_VALUE, Byte.MAX_VALUE from an unsigned integer between 0x00 and 0xFF. Behaviour is undefined outside those values!"
   (let [sign (bit-and  0x80 i)
         size (bit-and  0x7F i)]
     (- size sign)))
 
+(defn int-to-byte-pair [i]
+  [(bit-and i 0xFF00) (bit-and i 0x00FF)])
 
+;; FIXME move to classfile?
 (def MAGIC_BYTES         [0xCA 0xFE 0xBA 0xBE])
 (def MAJOR_VERSION_BYTES [0x00 0x32])
 (def MINOR_VERSION_BYTES [0x00 0x00])
@@ -99,8 +102,10 @@ Returns a pair [map, remainder], so it can nest within itself"
              (recur (merge acc maplet) (rest funcs) remainder))))))
 
 
+;; This is for locating constants by name and returning the index by
+;; which to refer to them in the class
 (defn each-with-index [aseq]
-  "Given a seq, return a seq of pairs (vectors) containing the elements of the seq, and the index at which they appear"
+  "Given a seq, return a seq of pairs (vectors) containing the elements of the seq, and the index at which they appear."
   (map vector aseq (iterate inc 0)))
 
 
@@ -111,8 +116,10 @@ Returns a pair [map, remainder], so it can nest within itself"
 
 
 (defn two-byte-index [i]
+  "Given an integer, return a byte pair as used by the classfile format to describe an array index"
   [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
 
 
 (defn four-byte-count [i]
+  "Given an integer, return a byte quad, used by the classfile format to describe a count or size"
   [(bit-and 0xFF000000 i) (bit-and 0x00FF00 i) (bit-and 0x0000FF00 i) (bit-and 0x000000FF i)])

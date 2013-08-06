@@ -4,27 +4,27 @@
   (:use [sporkle.java-class])
   (:use [sporkle.test.support]))
 
-(deftest test-simple-class
-  
-  (testing "A simple example of the build-class macro"
-    
-    (let [clazz
-          (build-class Foo
-                       
-           (static
-            (final
-             (field
-              MESSAGE java.lang.String "Hello, World.")))
+(comment (deftest test-simple-class
            
-           (public
-            (static
-             (method
-              main [(array java.lang.String)]
-              ;; (178 0 2
-              ;;  18 3
-              ;;  182 0 4
-              ;;  177)
-              [:getstatic     System/out
-               :ldc           "Hello, world." ;; compiler seems to optimise this to not load the field
-               :invokevirtual java.io.PrintStream/println
-               :return]))))])))
+           (testing "A simple example of the build-class macro"
+             
+             (let [clazz
+                   (build-class Foo
+                                
+                                (static
+                                 (final
+                                  (field
+                                   MESSAGE java.lang.String "Hello, World.")))
+                                
+                                (public
+                                 (static
+                                  (method
+                                   main [(array java.lang.String)]
+                                   ;; (178 0 2
+                                   ;;  18 3
+                                   ;;  182 0 4
+                                   ;;  177)
+                                   [:getstatic     System/out
+                                    :ldc           "Hello, world." ;; compiler seems to optimise this to not load the field
+                                    :invokevirtual java.io.PrintStream/println
+                                    :return]))))]))))

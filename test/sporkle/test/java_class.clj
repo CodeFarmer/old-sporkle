@@ -20,13 +20,13 @@
           "cp-find shoudl return nil when it can't find a constant"))))
 
 
-(deftest test-include-constant
+(deftest test-with-constant
   (testing "with an empty constant pool"
 
     (let [constant-pool []]
 
       (let [const {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes "Nothing"))}
-            [new-constant-pool index] (include-constant constant-pool const)]
+            [new-constant-pool index] (cp-with-constant constant-pool const)]
 
         (is (= 1 index)
             "New item should always have index 1")
@@ -39,14 +39,14 @@
           other-const   {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes "Something"))}
           constant-pool [const]]
 
-      (let [[new-constant-pool index] (include-constant constant-pool const)]
+      (let [[new-constant-pool index] (cp-with-constant constant-pool const)]
 
         (is (= constant-pool new-constant-pool)
             "constant pool should remain unchanged when an already-included constant is reincluded")
         (is (= 1 index)
             "correct index should be returned for the existing constant"))
 
-      (let [[new-constant-pool index] (include-constant constant-pool other-const)]
+      (let [[new-constant-pool index] (cp-with-constant constant-pool other-const)]
 
         (is (= 2 index)
             "constant should have new index at the end of the pool")
@@ -119,7 +119,7 @@
 
 
 (deftest test-implement-interface
-  (let [clazz (implement-interface (java-class "Nothing") "java/io/Serializable")
+  (let [clazz (jc-implementing-interface (java-class "Nothing") "java/io/Serializable")
         constant-pool (:constant-pool clazz)]
     (is (= 1 (count (:interfaces clazz)))
         "class should now have one interface")
@@ -170,7 +170,26 @@
   (testing "writing of a complete, mostly-empty classfile that can be loaded by the JVM"
     (with-open [stream (ByteArrayOutputStream.)]
       
-      (let [bytes (.toByteArray (write-java-class stream (implement-interface (java-class "Nothing") "java/io/Serializable")))
+      (let [bytes (.toByteArray (write-java-class stream (jc-implementing-interface (java-class "Nothing") "java/io/Serializable")))
             clazz (.loadBytes (ByteLoader.) bytes)]
         (is (.isAssignableFrom java.io.Serializable clazz)
             "class should be Serializable, since we declared the interface")))))
+
+
+(deftest test-write-class-with-field
+    (testing "writing of a class with a field that can be loaded with a jvm"
+      (with-open [stream (ByteArrayOutputStream.)]
+
+        (let [bytes (.toByteArray (write-java-class stream (jc-with-field (java-class "Nothing") ACC_PUBLIC "Ljava/lang/String;" "word")))
+              clazz (.loadBytes (ByteLoader.) bytes)]
+          (is (not (empty? (seq (.getFields clazz)))))))))
+
+
+(comment "This test is not simple enough - instanciation requires a ctor, you can have a field without construction"
+  (deftest test-write-class-with-field
+    (testing "writing of a class with a field that can be loaded with a jvm"
+      (with-open [stream (ByteArrayOutputStream.)]
+
+        (let [bytes (.toByteArray (write-java-class stream (jc-with-field (java-class "Nothing") ACC_PUBLIC "Ljava.lang.String" "word")))
+              clazz (.loadBytes (ByteLoader.) bytes)]
+          (is (nil? (. (.newInstance clazz) word))))))))

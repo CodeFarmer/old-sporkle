@@ -266,7 +266,7 @@
 
     (let [java-class (read-java-class-file "test/fixtures/MethodNothing.class")]
       (is (= 2 (count (:methods java-class)))
-          "the class should return one method")))
+          "the class should return one method plus constructor")))
 
   (testing "reading a Java class with attributes"
 

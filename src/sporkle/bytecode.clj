@@ -8,7 +8,7 @@
    [:aastore         0x53 0 -3]
    [:aconst_null     0x01 0  1]
 
-   ;; aload cant be used to load returnAddress
+   ;; aload can't be used to load returnAddress
    [:aload           0x19 1  1]
    [:aload_0         0x2a 0  1]
    [:aload_1         0x2b 0  1]
@@ -236,8 +236,14 @@
 ])
 
 
+;; {:aaload  [:aaload          0x32 0 -1]
+;;  :aastore [:aastore         0x53 0 -3]
+;;  ... }
 (def syms-to-opcodes
   (apply hash-map (interleave (map first OPCODES) OPCODES)))
 
+;; {0x32  [:aaload          0x32 0 -1]
+;;  0x53 | [:aastore         0x53 0 -3]
+;;  ... }
 (def bytes-to-opcodes
   (apply hash-map (interleave (map second OPCODES) OPCODES)))

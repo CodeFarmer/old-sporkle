@@ -42,7 +42,7 @@
 (def ^:const ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-;; constant pool entries
+;; constant pool entries and their tag values
 
 (def ^:const CONSTANT_Class               7)
 (def ^:const CONSTANT_Fieldref	          9)
@@ -451,7 +451,9 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 
 (defn write-interface [stream field])
-(defn write-field [stream field])
+
+
+
 (defn write-method [stream method])
 
 ;; attribute-length ;; ;; attribute-length ;; ;; attribute-length ;; 
@@ -471,7 +473,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
     (write-bytes (:info attribute))))
 
 (defn write-attributes
-  "Write the attributes of anything (class, method, attribute, etc) with reference to the constant pool of java-class for decoding name-indices"
+  "Write the attributes of anything (class, method, field, etc) with reference to the constant pool of java-class for decoding name-indices. if no thing is supplied, write the attributes of the java-class itself."
   ([stream java-class]
      (write-attributes stream (:constant-pool java-class) java-class))
   ([stream constant-pool thing]
@@ -480,19 +482,28 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
        (doseq [a attribs]
          (write-attribute stream constant-pool a))))) 
 
+;; this is ugly, just being able to make it partial is not a good
+;; enough reason to make it inconsistent
+(defn write-field [constant-pool stream field]
+  (write-bytes stream (:access-flags field))
+  (write-bytes stream (:name-index field))
+  (write-bytes stream (:descriptor-index field))
+  (write-attributes stream constant-pool field))
 
 (defn write-java-class [stream java-class]
-  
-  (write-class-header   stream)
-  (write-constant-pool  stream (:constant-pool java-class))
-  (write-bytes          stream (:access-flags  java-class))
-  (write-bytes          stream (:this-class    java-class))
-  (write-bytes          stream (:super-class   java-class))
-  
+
+  (let [cp (:constant-pool java-class)]
+    
+    (write-class-header   stream)
+    (write-constant-pool  stream cp)
+    (write-bytes          stream (:access-flags  java-class))
+    (write-bytes          stream (:this-class    java-class))
+    (write-bytes          stream (:super-class   java-class))
+    
                                         ; interfaces are just two-byte indices anyway
-  (write-thing-list stream write-bytes (:interfaces java-class))
-  
-  (write-thing-list stream write-field     (:fields     java-class))
-  (write-thing-list stream write-method    (:methods    java-class))
-  (write-attributes stream java-class)
-  stream)
+    (write-thing-list stream write-bytes (:interfaces java-class))
+    
+    (write-thing-list stream (partial write-field cp)     (:fields     java-class))
+    (write-thing-list stream write-method    (:methods    java-class))
+    (write-attributes stream java-class)
+    stream))

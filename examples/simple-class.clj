@@ -17,7 +17,6 @@
    (final
     (field NAME String))))
 
-
  (public
    
   (let [size (interface-method-ref (interface-method-ref int java.util.List "size" []) 1 0)]
