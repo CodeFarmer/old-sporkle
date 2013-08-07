@@ -210,11 +210,15 @@
           (is (= "void" (.getName (.getReturnType (first methods)))))))))
 
 
-(comment "This test is not simple enough - instanciation requires a ctor, you can have a field without construction"
-  (deftest test-write-class-with-field
-    (testing "writing of a class with a field that can be loaded with a jvm"
-      (with-open [stream (ByteArrayOutputStream.)]
 
-        (let [bytes (.toByteArray (write-java-class stream (jc-with-field (java-class "Nothing") ACC_PUBLIC "Ljava.lang.String" "word")))
-              clazz (.loadBytes (ByteLoader.) bytes)]
-          (is (nil? (. (.newInstance clazz) word))))))))
+(deftest test-write-class-with-default-constructor
+  (testing "writing a class that uses the default constructor logic and can be loaded by the JVM, then instantiated"
+    (with-open [stream (ByteArrayOutputStream.)]
+      (let [bytes (.toByteArray (write-java-class stream
+                                                  (jc-with-empty-constructor (java-class "Nothing")
+                                                    ACC_PUBLIC)))
+            
+            clazz (.loadBytes (ByteLoader.) bytes)
+            instance (.newInstance clazz)]
+          
+          (is (not (nil? instance)))))))

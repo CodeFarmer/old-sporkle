@@ -152,3 +152,11 @@
       :methods (if (some #(= % method-descriptor) methods)
                 methods
                 (conj methods method-descriptor)))))
+
+
+(defn jc-with-empty-constructor [java-class access-flags]
+
+  (jc-with-method java-class access-flags "()V" "<init>" 0 1
+    [:aload_0
+     :invokespecial "$superInit"
+     :return]) )
