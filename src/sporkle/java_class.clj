@@ -1,6 +1,7 @@
 (ns sporkle.java-class
   (:use [sporkle.core])
-  (:use [sporkle.classfile]))
+  (:use [sporkle.classfile])
+  (:use [sporkle.bytecode]))
 
 
 (defn cp-with-constant [constant-pool constant-info]
@@ -73,3 +74,77 @@
       :fields (if (some #(= % field-descriptor) fields)
                 fields
                 (conj fields field-descriptor)))))
+
+;; Return an updated constant pool, plus opcodes converted into a byte vector according to that constant pool
+
+(defn opcodes-to-code-bytes
+
+  ([constant-pool opcodes]
+
+      (opcodes-to-code-bytes constant-pool opcodes []))
+
+  ([constant-pool opcodes acc]
+
+     (if (empty? opcodes)
+       [constant-pool acc]
+       (let [sym (first opcodes)
+             op-info (get syms-to-opcodes sym)]
+         
+         (if (nil? op-info)
+           
+           (throw (IllegalArgumentException. (str "Unable to find opcode info for '" sym "'")))
+           
+           (let [[name code argwidth stack-delta] op-info]
+             
+             (if (= 0 argwidth)
+               (recur constant-pool (drop 1 opcodes) (conj acc code))
+               (throw (IllegalArgumentException. "Opcodes that take arguments are not supported yet")))))))))
+
+
+;; FIXME add exception tables
+(defn cp-with-code-attribute [cp max-stack max-locals opcodes]
+
+  "Return a suitably updated constant pool, plus a Code Attribute (see JVM spec section 4.7.3) corresponding to the opcodes (translated into a byte array). Presently returns no exception table or further attributes."
+
+  (let [[cp name-index] (cp-with-utf8 cp "Code")
+        [cp code-bytes] (opcodes-to-code-bytes cp opcodes)
+        code-count (count code-bytes)]
+
+    [cp
+     {:attribute-name-index   (int-to-byte-pair name-index)
+      ;; FIXME this assumes no exception table etc
+      :attribute-length       (four-byte-count (+ code-count 12))
+      :max-stack              (int-to-byte-pair max-stack)
+      :max-locals             (int-to-byte-pair max-locals)
+      :code-length            (four-byte-count code-count)
+      :code                   code-bytes
+      :exception-table-length [0x00 0x00]
+      :exception-table        []
+      :attributes-count       [0x00 0x00]
+      :attributes             []}]))
+
+
+;; FIXME share more code with field-desc
+(defn jc-with-method [java-class
+                      access-flags
+                      method-desc
+                      method-name
+                      max-stack
+                      max-locals
+                      opcodes]
+  (let [cp (:constant-pool java-class)
+        methods (:methods java-class)
+        [cp name-index] (cp-with-utf8 cp method-name)
+        [cp descriptor-index] (cp-with-utf8 cp method-desc)
+        [cp code-attribute] (cp-with-code-attribute cp max-stack max-locals opcodes)
+        method-descriptor {:access-flags     (int-to-byte-pair access-flags)
+                           :name-index       (int-to-byte-pair name-index)
+                           :descriptor-index (int-to-byte-pair descriptor-index)
+                           ;; NOTE this is incomplete
+                           :attributes [code-attribute]}]
+
+    (assoc java-class
+      :constant-pool cp
+      :methods (if (some #(= % method-descriptor) methods)
+                methods
+                (conj methods method-descriptor)))))

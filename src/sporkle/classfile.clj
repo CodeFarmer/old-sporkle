@@ -468,9 +468,10 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (let [info (:info attribute)]
     (if (nil? info)
       (throw (IllegalArgumentException. "Fell through to default write-attribute implementation, but attribute has no info")))
-    (write-bytes (:attribute-name-index attribute))
-    (write-bytes (four-byte-count (count (:info attribute))))
-    (write-bytes (:info attribute))))
+    (write-bytes stream (:attribute-name-index attribute))
+    (write-bytes stream (four-byte-count (count (:info attribute))))
+    (write-bytes stream (:info attribute))))
+
 
 (defn write-attributes
   "Write the attributes of anything (class, method, field, etc) with reference to the constant pool of java-class for decoding name-indices. if no thing is supplied, write the attributes of the java-class itself."
@@ -480,7 +481,19 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
      (let [attribs (:attributes thing)]
        (write-bytes stream (two-byte-index (count attribs)))
        (doseq [a attribs]
-         (write-attribute stream constant-pool a))))) 
+         (write-attribute stream constant-pool a)))))
+
+(defmethod write-attribute "Code" [stream constant-pool attribute]
+  (write-bytes stream (:attribute-name-index   attribute))
+  (write-bytes stream (:attribute-length       attribute))
+  (write-bytes stream (:max-stack              attribute))
+  (write-bytes stream (:max-locals             attribute))
+  (write-bytes stream (:code-length            attribute))
+  (write-bytes stream (:code                   attribute))
+  (write-bytes stream (:exception-table-length attribute))
+  ;; FIXME write exception table, when that exists
+  (write-attributes stream constant-pool attribute))
+
 
 ;; this is ugly, just being able to make it partial is not a good
 ;; enough reason to make it inconsistent
@@ -504,6 +517,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
     (write-thing-list stream write-bytes (:interfaces java-class))
     
     (write-thing-list stream (partial write-field cp)     (:fields     java-class))
-    (write-thing-list stream write-method    (:methods    java-class))
+    ;; is write-field also write-method?
+    (write-thing-list stream (partial write-field cp)     (:methods     java-class))
     (write-attributes stream java-class)
     stream))

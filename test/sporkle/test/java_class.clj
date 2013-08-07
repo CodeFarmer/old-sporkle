@@ -177,12 +177,37 @@
 
 
 (deftest test-write-class-with-field
-    (testing "writing of a class with a field that can be loaded with a jvm"
+    (testing "writing of a class with a field that can be loaded with a jvm, with a field type and a name"
       (with-open [stream (ByteArrayOutputStream.)]
 
         (let [bytes (.toByteArray (write-java-class stream (jc-with-field (java-class "Nothing") ACC_PUBLIC "Ljava/lang/String;" "word")))
-              clazz (.loadBytes (ByteLoader.) bytes)]
-          (is (not (empty? (seq (.getFields clazz)))))))))
+              clazz (.loadBytes (ByteLoader.) bytes)
+              fields (seq (.getFields clazz))]
+          
+          (is (not (empty? fields)))
+          (is (= "word" (.getName (first fields))))
+          (is (= java.lang.String (.getType (first fields))))))))
+
+(deftest test-write-class-with-method
+  (testing "writing of a class with a method that can be loaded to the JVM, with a method descriptor, name and some opcodes"
+    (with-open [stream (ByteArrayOutputStream.)]
+
+      (let [bytes (.toByteArray (write-java-class stream
+                                                  (jc-with-method (java-class "Nothing")
+                                                    ACC_PUBLIC
+                                                    "()V"
+                                                    "doNothing"
+                                                    0
+                                                    1 ;; this
+                                                    [:return])))
+            
+              clazz (.loadBytes (ByteLoader.) bytes)
+              methods (seq (.getDeclaredMethods clazz))]
+          
+          (is (not (empty? methods)))
+          (is (= "doNothing" (.getName (first methods))))
+          (is (empty? (.getParameterTypes (first methods))))
+          (is (= "void" (.getName (.getReturnType (first methods)))))))))
 
 
 (comment "This test is not simple enough - instanciation requires a ctor, you can have a field without construction"
