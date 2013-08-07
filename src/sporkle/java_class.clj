@@ -89,16 +89,20 @@
        [constant-pool acc]
        (let [sym (first opcodes)
              op-info (get syms-to-opcodes sym)]
-         
-         (if (nil? op-info)
+
+         (if (not (keyword? sym))
+
+           (throw (IllegalArgumentException. (str "Expected bytecode operation key, got '" sym "'")))
            
-           (throw (IllegalArgumentException. (str "Unable to find opcode info for '" sym "'")))
-           
-           (let [[name code argwidth stack-delta] op-info]
+           (if (nil? op-info)
              
-             (if (= 0 argwidth)
-               (recur constant-pool (drop 1 opcodes) (conj acc code))
-               (throw (IllegalArgumentException. "Opcodes that take arguments are not supported yet")))))))))
+             (throw (IllegalArgumentException. (str "Unable to find opcode info for '" sym "'")))
+             
+             (let [[name code argwidth stack-delta] op-info]
+               
+               (if (= 0 argwidth)
+                 (recur constant-pool (drop 1 opcodes) (conj acc code))
+                 (throw (IllegalArgumentException. "Opcodes that take arguments are not supported yet"))))))))))
 
 
 ;; FIXME add exception tables
