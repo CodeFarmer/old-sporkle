@@ -23,6 +23,23 @@
   (let [[new-cp idx] (cp-with-utf8 constant-pool string)]
     (cp-with-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
 
+
+(defn cp-with-name-and-type [constant-pool name descriptor]
+
+  (let [[new-cp name-index]       (cp-with-utf8 constant-pool name)
+        [new-cp descriptor-index] (cp-with-utf8 new-cp descriptor)]
+
+    (cp-with-constant new-cp {:tag [CONSTANT_NameAndType] :name-index (two-byte-index name-index) :descriptor-index (two-byte-index descriptor-index)})))
+
+
+(defn cp-with-method [constant-pool class-name method-name descriptor]
+
+  (let [[new-cp class-index]   (cp-with-class constant-pool class-name)
+        [new-cp name-and-type-index] (cp-with-name-and-type new-cp method-name descriptor)]
+
+    (cp-with-constant new-cp {:tag [CONSTANT_Methodref] :class-index (two-byte-index class-index) :name-and-type-index (two-byte-index name-and-type-index)})))
+
+
 (defn java-class
 
   ([class-name]
