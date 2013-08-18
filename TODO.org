@@ -1,0 +1,10 @@
+
+- [X] Constructors
+
+- [X] Instructions that take arguments
+  - [X] literals
+    - [X] Methodrefs
+      - [X] in constant pool
+      - [X] specifying in bytecode
+  - [X] general argument parsing
+    - (op, cp, stream) -> (cp, stream, bytes)

@@ -1,8 +1,8 @@
 (ns sporkle.classfile  
   (:use sporkle.core)
   (:use sporkle.bytecode)
-  (:require [clojure.java.io :as io])
-  (:require [clojure.string :as str]))
+  (:use sporkle.constant-pool)
+  (:require [clojure.java.io :as io]))
 
 ;; ClassFile {
 ;; 	u4 magic;
@@ -42,53 +42,13 @@
 (def ^:const ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-;; constant pool entries and their tag values
-
-(def ^:const CONSTANT_Class               7)
-(def ^:const CONSTANT_Fieldref	          9)
-(def ^:const CONSTANT_Methodref	         10)
-(def ^:const CONSTANT_InterfaceMethodref 11)
-(def ^:const CONSTANT_String              8)
-
-(def ^:const CONSTANT_Integer             3)
-(def ^:const CONSTANT_Float               4)
-(def ^:const CONSTANT_Long                5)
-(def ^:const CONSTANT_Double              6)
-
-(def ^:const CONSTANT_NameAndType        12)
-(def ^:const CONSTANT_Utf8                1)
-
-
 ;; some classfile byte extraction goodness
 
-(defn tag [unpacked-struct]
-  (let [t (:tag unpacked-struct)]
-    (if (keyword? (first t))
-      (first t)
-      (bytes-to-integral-type (:tag unpacked-struct)))))
 
 (defn access-flags [unpacked-struct]
   (bytes-to-integral-type (:access-flags unpacked-struct)))
 
 
-;; pass the constant pool, as some things evaluate to indices into it which should be followed
-(defmulti cp-entry-value #(tag %2))
-
-(defmethod cp-entry-value CONSTANT_Utf8 [constant-pool pool-entry]
-  (str/join (map char (:bytes pool-entry))))
-
-(defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
-  (bytes-to-integral-type (:bytes pool-entry)))
-
-(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
-  (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
-
-(defmethod cp-entry-value :default [java-class pool-entry]
-  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
-
-(defn constant-value
-  ([constant-pool pool-index]
-     (cp-entry-value constant-pool (nth constant-pool (dec pool-index)))))
 
 ;; this is necessary for two reasons
 ;; 1) The indices are 1-based!
@@ -346,23 +306,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (map (partial indexed-name java-class) (:interfaces java-class)))
 
 
-(defn cp-find [constant-pool value-map]
-  "Find the cp-index into constant pool where a constant with particular contents can be found (remember, cp-indices start at one and have other potentially annoying behaviour)."
-  
-  (loop [indexed-cp (each-with-index constant-pool)]
-    (if (empty? indexed-cp)
-      nil
-      (let [[c i] (first indexed-cp)]
-        (if (= c value-map)
-          (inc i)
-          (recur (rest indexed-cp)))))))
-
-
-(defn cp-find-utf8 [constant-pool string]
-  "Shortcut to cp-find for UTF-8 strings, which is a very common case"
-  (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
-
-
 (defn attribute-named [constant-pool thing name]
   "Retrieve the :attributes member of thing whose attribute-name-index corresponds to the location of 'name' in the constant pool"
   (when-let [idx (cp-find-utf8 constant-pool name)]
@@ -426,6 +369,67 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 (defmethod constant-pool-entry-bytes :spacer [cp-entry]
   [])
+
+
+(defn opcodes-to-code-bytes
+
+  "Given a constant pool and pseudo-bytecode, return the constant pool plus a stream of bytes, potentially by updating the pool with constants generated from literals in the code seq"
+
+  ;; FIXME laxy seq please
+  
+  ([cp pseudocode]
+
+     (opcodes-to-code-bytes cp pseudocode []))
+
+  ([cp pseudocode acc]
+
+     (if (empty? pseudocode)
+       [cp acc]
+
+       (let [[op-symbol & remainder] pseudocode
+             op (get syms-to-opcodes op-symbol)]
+
+         (if (nil? op)
+
+           (throw (IllegalArgumentException. (str "Unable to find operation for code item '" op-symbol "'; next few " (take 4 remainder))))
+
+           (let [[_ op-byte _ _ bc-arg-fn] op]
+
+             (if (nil? bc-arg-fn)
+
+                                        ;;; FIXME all this (flatten...) shit is awful no args
+              
+               (opcodes-to-code-bytes cp remainder (flatten [acc op-byte]))
+
+                ;; some args
+                
+               (let [[cp arg-bytes remainder] (bc-arg-fn cp remainder)]
+
+                 (opcodes-to-code-bytes cp remainder (flatten [acc op-byte arg-bytes]))))
+
+             ))))))
+
+
+(defn cp-with-code-attribute [cp max-stack max-locals pseudocode]
+
+  "Return a suitably updated constant pool, plus a Code Attribute (see JVM spec section 4.7.3) corresponding to the opcodes (translated into a byte array). Presently returns no exception table or further attributes."
+
+  (let [[cp name-index] (cp-with-utf8 cp "Code")
+        [cp code-bytes] (opcodes-to-code-bytes cp pseudocode)
+        code-count (count code-bytes)]
+
+    [cp
+     {:attribute-name-index   (int-to-byte-pair name-index)
+      ;; FIXME this assumes no exception table etc
+      :attribute-length       (four-byte-count (+ code-count 12))
+      :max-stack              (int-to-byte-pair max-stack)
+      :max-locals             (int-to-byte-pair max-locals)
+      :code-length            (four-byte-count code-count)
+      :code                   code-bytes
+      :exception-table-length [0x00 0x00]
+      :exception-table        []
+      :attributes-count       [0x00 0x00]
+      :attributes             []}]))
   
 (defmethod constant-pool-entry-bytes :default [cp-entry]
   (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (tag cp-entry))))))
@@ -451,8 +455,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 
 (defn write-interface [stream field])
-
-
 
 (defn write-method [stream method])
 

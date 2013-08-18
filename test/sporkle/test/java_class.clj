@@ -5,6 +5,7 @@
   (:use [sporkle.java-class])
   (:use [sporkle.classfile])
   (:use [sporkle.test.support])
+  (:use sporkle.constant-pool)
   (:require [clojure.java.io :as io])
   (:import  [java.io ByteArrayOutputStream])
   (:import  [sporkle.test ByteLoader]))
@@ -195,8 +196,8 @@
       (let [bytes (.toByteArray (write-java-class stream
                                                   (jc-with-method (java-class "Nothing")
                                                     ACC_PUBLIC
-                                                    "()V"
                                                     "doNothing"
+                                                    "()V"
                                                     0
                                                     1 ;; this
                                                     [:return])))
@@ -215,7 +216,7 @@
   (testing "writing a class that uses the default constructor logic and can be loaded by the JVM, then instantiated"
     (with-open [stream (ByteArrayOutputStream.)]
       (let [bytes (.toByteArray (write-java-class stream
-                                                  (jc-with-empty-constructor (java-class "Nothing")
+                                                  (jc-with-empty-constructor (public (java-class "Nothing"))
                                                     ACC_PUBLIC)))
             
             clazz (.loadBytes (ByteLoader.) bytes)

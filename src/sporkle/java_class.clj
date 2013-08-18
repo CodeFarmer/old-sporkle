@@ -1,43 +1,16 @@
 (ns sporkle.java-class
   (:use [sporkle.core])
   (:use [sporkle.classfile])
-  (:use [sporkle.bytecode]))
+  (:use [sporkle.bytecode])
+  (:use [sporkle.constant-pool]))
 
 
-(defn cp-with-constant [constant-pool constant-info]
-  "Given a pool and a constant structure, return the constant pool containing the constant (adding it if necessary), and its index"
-  (if-let [index (cp-find constant-pool constant-info)]
-    [constant-pool index]
-    [(conj constant-pool constant-info) (+ 1 (count constant-pool))]))
+(defn public [thing]
 
-;; constant pool methods, consider consolidating after you know what shape they are
-(defn cp-with-utf8 [constant-pool string]
-  "Given a constant pool and a string, return a vector containing the constant pool with the Utf8 constant, and the cp index"
-  (cp-with-constant constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+  ;; FIXME I am beginning to think having all the byte pairs and so on live in the classfile struct was a bad idea. Maybe just encode and decode at read and write time?
+  (let [decoded-access-flag (bytes-to-integral-type (get thing :access-flags 0))]
 
-
-(defn cp-with-class [constant-pool string]
-  
-  "Given a constant pool and a string, return a vector containing the constant pool containing the string as a Utf8 constant and a Class constant whose name-index aligns with it, and the cp index of the class constant"
-  
-  (let [[new-cp idx] (cp-with-utf8 constant-pool string)]
-    (cp-with-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
-
-
-(defn cp-with-name-and-type [constant-pool name descriptor]
-
-  (let [[new-cp name-index]       (cp-with-utf8 constant-pool name)
-        [new-cp descriptor-index] (cp-with-utf8 new-cp descriptor)]
-
-    (cp-with-constant new-cp {:tag [CONSTANT_NameAndType] :name-index (two-byte-index name-index) :descriptor-index (two-byte-index descriptor-index)})))
-
-
-(defn cp-with-method [constant-pool class-name method-name descriptor]
-
-  (let [[new-cp class-index]   (cp-with-class constant-pool class-name)
-        [new-cp name-and-type-index] (cp-with-name-and-type new-cp method-name descriptor)]
-
-    (cp-with-constant new-cp {:tag [CONSTANT_Methodref] :class-index (two-byte-index class-index) :name-and-type-index (two-byte-index name-and-type-index)})))
+    (assoc thing :access-flags (two-byte-index (bit-or decoded-access-flag ACC_PUBLIC)))))
 
 
 (defn java-class
@@ -92,64 +65,13 @@
                 fields
                 (conj fields field-descriptor)))))
 
-;; Return an updated constant pool, plus opcodes converted into a byte vector according to that constant pool
-
-(defn opcodes-to-code-bytes
-
-  ([constant-pool opcodes]
-
-      (opcodes-to-code-bytes constant-pool opcodes []))
-
-  ([constant-pool opcodes acc]
-
-     (if (empty? opcodes)
-       [constant-pool acc]
-       (let [sym (first opcodes)
-             op-info (get syms-to-opcodes sym)]
-
-         (if (not (keyword? sym))
-
-           (throw (IllegalArgumentException. (str "Expected bytecode operation key, got '" sym "'")))
-           
-           (if (nil? op-info)
-             
-             (throw (IllegalArgumentException. (str "Unable to find opcode info for '" sym "'")))
-             
-             (let [[name code argwidth stack-delta] op-info]
-               
-               (if (= 0 argwidth)
-                 (recur constant-pool (drop 1 opcodes) (conj acc code))
-                 (throw (IllegalArgumentException. "Opcodes that take arguments are not supported yet"))))))))))
-
-
-;; FIXME add exception tables
-(defn cp-with-code-attribute [cp max-stack max-locals opcodes]
-
-  "Return a suitably updated constant pool, plus a Code Attribute (see JVM spec section 4.7.3) corresponding to the opcodes (translated into a byte array). Presently returns no exception table or further attributes."
-
-  (let [[cp name-index] (cp-with-utf8 cp "Code")
-        [cp code-bytes] (opcodes-to-code-bytes cp opcodes)
-        code-count (count code-bytes)]
-
-    [cp
-     {:attribute-name-index   (int-to-byte-pair name-index)
-      ;; FIXME this assumes no exception table etc
-      :attribute-length       (four-byte-count (+ code-count 12))
-      :max-stack              (int-to-byte-pair max-stack)
-      :max-locals             (int-to-byte-pair max-locals)
-      :code-length            (four-byte-count code-count)
-      :code                   code-bytes
-      :exception-table-length [0x00 0x00]
-      :exception-table        []
-      :attributes-count       [0x00 0x00]
-      :attributes             []}]))
 
 
 ;; FIXME share more code with field-desc
 (defn jc-with-method [java-class
                       access-flags
-                      method-desc
                       method-name
+                      method-desc
                       max-stack
                       max-locals
                       opcodes]
@@ -171,9 +93,10 @@
                 (conj methods method-descriptor)))))
 
 
+;; FIXME this defaults to Object, rather than the superclass if it can be found
 (defn jc-with-empty-constructor [java-class access-flags]
 
-  (jc-with-method java-class access-flags "()V" "<init>" 0 1
+  (jc-with-method java-class access-flags "<init>" "()V" 1 1
     [:aload_0
-     :invokespecial "$superInit"
-     :return]) )
+     :invokespecial "java/lang/Object" "<init>" "()V"
+     :return]))

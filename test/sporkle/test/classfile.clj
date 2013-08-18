@@ -1,9 +1,11 @@
 (ns sporkle.test.classfile
   (:use [sporkle.core])
   (:use [sporkle.classfile])
+  (:use sporkle.constant-pool)
   (:use [clojure.test])
   (:require [clojure.java.io :as io]))
 
+;; this file now tests a bunch of constant-pool stuff, maybe split?
 
 (deftest test-read-constant-pool-entry
 
@@ -429,8 +431,5 @@
         "double constant is tag, two high bytes, two low bytes")))
 
 
-
-(comment (deftest test-write-class
-           (testing "Reading a class produced by javac and writing it back as a class that can then be loaded by the classloader")))
 
 
