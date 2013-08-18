@@ -1,0 +1,102 @@
+(ns sporkle.constant-pool
+  (:use sporkle.core)
+  (:require [clojure.string :as str]))
+
+
+;; constant pool entries and their tag values
+
+(def ^:const CONSTANT_Class               7)
+(def ^:const CONSTANT_Fieldref	          9)
+(def ^:const CONSTANT_Methodref	         10)
+(def ^:const CONSTANT_InterfaceMethodref 11)
+(def ^:const CONSTANT_String              8)
+
+(def ^:const CONSTANT_Integer             3)
+(def ^:const CONSTANT_Float               4)
+(def ^:const CONSTANT_Long                5)
+(def ^:const CONSTANT_Double              6)
+
+(def ^:const CONSTANT_NameAndType        12)
+(def ^:const CONSTANT_Utf8                1)
+
+
+
+;; constant pool methods, consider consolidating after you know what shape they are
+;; pass the constant pool, as some things evaluate to indices into it which should be followed
+
+(defn tag [unpacked-struct]
+  (let [t (:tag unpacked-struct)]
+    (if (keyword? (first t))
+      (first t)
+      (bytes-to-integral-type (:tag unpacked-struct)))))
+
+(defmulti cp-entry-value #(tag %2))
+
+(defmethod cp-entry-value CONSTANT_Utf8 [constant-pool pool-entry]
+  (str/join (map char (:bytes pool-entry))))
+
+(defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
+  (bytes-to-integral-type (:bytes pool-entry)))
+
+(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
+  (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
+
+(defmethod cp-entry-value :default [java-class pool-entry]
+  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
+
+(defn constant-value
+  ([constant-pool pool-index]
+     (cp-entry-value constant-pool (nth constant-pool (dec pool-index)))))
+
+
+(defn cp-find [constant-pool value-map]
+  "Find the cp-index into constant pool where a constant with particular contents can be found (remember, cp-indices start at one and have other potentially annoying behaviour)."
+  
+  (loop [indexed-cp (each-with-index constant-pool)]
+    (if (empty? indexed-cp)
+      nil
+      (let [[c i] (first indexed-cp)]
+        (if (= c value-map)
+          (inc i)
+          (recur (rest indexed-cp)))))))
+
+
+(defn cp-find-utf8 [constant-pool string]
+  "Shortcut to cp-find for UTF-8 strings, which is a very common case"
+  (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+
+
+(defn cp-with-constant [constant-pool constant-info]
+  "Given a pool and a constant structure, return the constant pool containing the constant (adding it if necessary), and its index"
+  (if-let [index (cp-find constant-pool constant-info)]
+    [constant-pool index]
+    [(conj constant-pool constant-info) (+ 1 (count constant-pool))]))
+
+(defn cp-with-utf8 [constant-pool string]
+  "Given a constant pool and a string, return a vector containing the constant pool with the Utf8 constant, and the cp index"
+  (cp-with-constant constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+
+
+(defn cp-with-class [constant-pool string]
+  
+  "Given a constant pool and a string, return a vector containing the constant pool containing the string as a Utf8 constant and a Class constant whose name-index aligns with it, and the cp index of the class constant"
+  
+  (let [[new-cp idx] (cp-with-utf8 constant-pool string)]
+    (cp-with-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
+
+
+(defn cp-with-name-and-type [constant-pool name descriptor]
+
+  (let [[new-cp name-index]       (cp-with-utf8 constant-pool name)
+        [new-cp descriptor-index] (cp-with-utf8 new-cp descriptor)]
+
+    (cp-with-constant new-cp {:tag [CONSTANT_NameAndType] :name-index (two-byte-index name-index) :descriptor-index (two-byte-index descriptor-index)})))
+
+
+(defn cp-with-method [constant-pool class-name method-name descriptor]
+
+  (let [[new-cp class-index]   (cp-with-class constant-pool class-name)
+        [new-cp name-and-type-index] (cp-with-name-and-type new-cp method-name descriptor)]
+
+    (cp-with-constant new-cp {:tag [CONSTANT_Methodref] :class-index (two-byte-index class-index) :name-and-type-index (two-byte-index name-and-type-index)})))
+
