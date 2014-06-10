@@ -19,6 +19,9 @@
 (def ^:const CONSTANT_NameAndType        12)
 (def ^:const CONSTANT_Utf8                1)
 
+(def ^:const CONSTANT_MethodHandle       15)
+(def ^:const CONSTANT_MethodType         16)
+(def ^:const CONSTANT_InvokeDynamic      18)
 
 
 ;; constant pool methods, consider consolidating after you know what shape they are

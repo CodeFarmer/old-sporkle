@@ -92,6 +92,15 @@
 (defmethod read-constant-pool-entry CONSTANT_Double [bytes]
   (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
 
+(defmethod read-constant-pool-entry CONSTANT_MethodHandle [bytes]
+  (unpack-struct [[:tag 1] [:reference-kind 1] [:reference-index 2]] bytes))
+
+(defmethod read-constant-pool-entry CONSTANT_MethodType [bytes]
+  (unpack-struct [[:tag 1] [:descriptor-index 2]] bytes))
+
+(defmethod read-constant-pool-entry CONSTANT_InvokeDynamic [bytes]
+  (unpack-struct [[:tag 1] [:bootstrap-method-attr-index 2] [:name-and-type-index 2]] bytes))
+
 (defmethod read-constant-pool-entry :default [bytes]
   (let [tag (first bytes)]
     (if (nil? tag)
