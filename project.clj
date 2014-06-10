@@ -1,6 +1,4 @@
-(defproject sporkle "1.0.0-SNAPSHOT"
+(defproject sporkle "0.1.0-SNAPSHOT"
   :description "Pure-Clojure Java classfile assembler and disassembler"
-  :dependencies [[org.clojure/clojure "1.3.0"]
-                 [org.clojure/clojure-contrib "1.2.0"]]
-  :dev-dependencies [[swank-clojure "1.4.0"]])
-
+  :url "http://github.com/CodeFarmer/sporkle"
+  :dependencies [[org.clojure/clojure "1.6.0"]])
