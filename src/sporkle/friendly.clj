@@ -46,8 +46,8 @@
 (defn friendly-attr [const-pool attr]
   "Given an unpacked attribute object, output the form describing the attribute with its name string."
   (->> attr
+       (-attr-with-name const-pool)
        (-attr-with-attrs const-pool)
-       (-attr-with-code const-pool)
-       (-attr-with-name const-pool)))
+       (-attr-with-code const-pool)))
 
 
