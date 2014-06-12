@@ -351,35 +351,6 @@
     (testing "loading the new constant pool struct types"
       (is (some #(= CONSTANT_MethodHandle (first (:tag %))) constant-pool)))
     ))
-;; ;; ;; ;; 
-
-(deftest test-friendly-code
-
-  (testing "simple code with fixed operands"
-    (let [code-bytes [42 183 0 1 177]]
-
-      (is (= [:aload_0
-              :invokespecial 0 1
-              :return] ; this is the empty constructor from my local javac
-
-             (friendly-code code-bytes)))))
-
-  (testing "longer code"
-    (let [code-bytes [43 185 0 14 1 0 62 44 182 0 15 185 0 16 1 0 54 4 29 21 4 96 172]]
-
-      (is (= [:aload_1
-              :invokeinterface 0 14 1 0
-              :istore_3
-              :aload_2
-              :invokevirtual 0 15
-              :invokeinterface 0 16 1 0
-              :istore 4
-              :iload_3
-              :iload 4
-              :iadd
-              :ireturn] ; ClassWithAllConstantPoolType.countListAndHashMap()
-             
-             (friendly-code code-bytes))))))
 
 
 ;; class writing
