@@ -333,7 +333,7 @@
 
 
 ;; This is going to end up quite a large test, but only as g-c-v gets implemented (once I figure out what it should really return).
-(deftest test-constant-value
+(deftest test-constant-value 
   
   (let [clazz (read-java-class-file "test/fixtures/ClassWithAllConstantPoolTypes.class")
         constant-pool (:constant-pool clazz)]
@@ -344,6 +344,14 @@
 
     (comment "TODO and aaaaalll the rest of them, just need to figure out what shape they should be")))
 
+(deftest test-java-8-class-reading 
+  
+  (let [clazz (read-java-class-file "test/fixtures/Java8Lambda.class")
+        constant-pool (:constant-pool clazz)]
+    (testing "loading the new constant pool struct types"
+      (is (some #(= CONSTANT_MethodHandle (first (:tag %))) constant-pool)))
+    ))
+;; ;; ;; ;; 
 
 (deftest test-friendly-code
 
