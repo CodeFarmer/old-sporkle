@@ -44,8 +44,21 @@
 (defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
   (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
 
+(defmethod cp-entry-value CONSTANT_NameAndType [constant-pool pool-entry]
+  {:name (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-index pool-entry)))))
+   :descriptor (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:descriptor-index pool-entry)))))})
+
+(defmethod cp-entry-value CONSTANT_Class [constant-pool pool-entry]
+  (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-index pool-entry))))))
+
+;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
+(defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
+  {:name-and-type (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-and-type-index pool-entry)))))
+   :class (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:class-index pool-entry)))))})
+
 (defmethod cp-entry-value :default [java-class pool-entry]
-  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (:tag pool-entry))))))
+  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (bytes-to-integral-type (:tag pool-entry)))))))
+
 
 (defn constant-value
   ([constant-pool pool-index]
