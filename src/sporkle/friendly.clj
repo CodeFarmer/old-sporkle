@@ -2,9 +2,24 @@
   (:use sporkle.core)
   (:use sporkle.bytecode)
   (:use sporkle.classfile)
+  (:use sporkle.constant-pool)
   (:require [clojure.java.io :as io]))
 
+;; 
+(defn -constant-pool-tag-constants []
+  "Get the constant pool symbol names, and their associated symbols."
+  (filter #(.startsWith (str (first %)) "CONSTANT") (ns-publics 'sporkle.constant-pool)))
+
+(defn -get-symbol-for-constant-tag [tag-number]
+  "Yeah, it's a kludge. Locates the constant symbol representing a particular tag name, if it exists"
+  (first
+   ;; this first-filter thing *surely* has an actual function for it.
+   (first (filter #(= tag-number (var-get (second %))) (-constant-pool-tag-constants))))) 
+
 ;; dissassembly
+
+(defn friendly-cp-entry [constant-pool entry]
+  (list 'cp-entry (-get-symbol-for-constant-tag (first (:tag entry))) (cp-entry-value constant-pool entry)))
 
 ;; TODO rewrite using threading macros, this is awful
 (def friendly-attr)

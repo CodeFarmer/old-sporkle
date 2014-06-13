@@ -51,3 +51,18 @@
                :max-locals (0 1)}
 
              friendly-code-attrib)))))
+
+(deftest test-friendly-cp-entry
+  (let [java-class (read-java-class-file "test/fixtures/Nothing.class")
+        constant-pool (:constant-pool java-class)]
+
+    (testing "simple Utf8 case"
+      (is (= '(cp-entry CONSTANT_Utf8 "<init>")
+             (friendly-cp-entry constant-pool (nth constant-pool 3))) ))
+    (testing "more complicated NameAndType case"
+      (is (= '(cp-entry CONSTANT_NameAndType {:name "<init>" :descriptor "()V"})
+             (friendly-cp-entry constant-pool (nth constant-pool 9))) ))
+    (testing "most complicated Methodref case"
+      (is (= '(cp-entry CONSTANT_Methodref {:name-and-type {:name "<init>", :descriptor "()V"}, :class "java/lang/Object"})
+             (friendly-cp-entry constant-pool (first constant-pool)))))))
+
