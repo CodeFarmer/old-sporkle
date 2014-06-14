@@ -41,6 +41,10 @@
 (defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
   (bytes-to-integral-type (:bytes pool-entry)))
 
+(defmethod cp-entry-value CONSTANT_Long [constant-pool pool-entry]
+  (bit-or (bytes-to-integral-type (:low-bytes pool-entry))
+          (bit-shift-left (bytes-to-integral-type (:high-bytes pool-entry)) 32)))
+
 (defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
   (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
 
@@ -52,7 +56,14 @@
   (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-index pool-entry))))))
 
 ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
+;; - in such a way that I can get rid of :spacer
+
 (defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
+  {:name-and-type (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-and-type-index pool-entry)))))
+   :class (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:class-index pool-entry)))))})
+
+;; FIXME unify Method and Fieldref code
+(defmethod cp-entry-value CONSTANT_Fieldref [constant-pool pool-entry]
   {:name-and-type (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-and-type-index pool-entry)))))
    :class (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:class-index pool-entry)))))})
 
