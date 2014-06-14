@@ -1,11 +1,15 @@
-- [ ] constant-pool-entry-value
-  - [ ] Finish all the multimethods
-  - [ ] Consider having a lot of constant-pool entries that are symbols
-  (like Classes and methodrefs) evaluate to symbols instead of Strings
-  and structs
-  - [ ] Abstract out all the calculation and dereferencing repetitive
-    code for :whatever-index
+- [ ] constant-pool
   - [ ] :spacer is a kludge and I hate it
+  - [ ] Double?
+  - [ ] constant-pool-entry-value
+    - [ ] Finish all the multimethods
+    - [ ] Consider having a lot of constant-pool entries that are
+      symbols (like Classes and methodrefs) evaluate to symbols
+      instead of Strings and structs
+    - [ ] Abstract out all the calculation and dereferencing repetitive
+    code for :whatever-index
+    - [ ] Unify field and method ref code
+
 
 
   
