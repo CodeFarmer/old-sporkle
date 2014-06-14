@@ -19,7 +19,10 @@
 ;; dissassembly
 
 (defn friendly-cp-entry [constant-pool entry]
-  (list 'cp-entry (-get-symbol-for-constant-tag (first (:tag entry))) (cp-entry-value constant-pool entry)))
+  (if (= [:spacer] (:tag entry))
+    (list 'cp-entry :spacer) ;; FIXME this sucks balls
+    (list 'cp-entry (-get-symbol-for-constant-tag (first (:tag entry))) (cp-entry-value constant-pool entry))))
+
 
 ;; TODO rewrite using threading macros, this is awful
 (def friendly-attr)

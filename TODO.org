@@ -5,3 +5,8 @@
   and structs
   - [ ] Abstract out all the calculation and dereferencing repetitive
     code for :whatever-index
+  - [ ] :spacer is a kludge and I hate it
+
+
+  
+
