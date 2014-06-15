@@ -31,7 +31,11 @@
   (let [t (:tag unpacked-struct)]
     (if (keyword? (first t))
       (first t)
-      (bytes-to-integral-type (:tag unpacked-struct)))))
+      (bytes-to-integral-type t))))
+
+(defn cp-nth [cp n]
+  "Retrieve the nth item from a constant pool, which is 1-indexed and in which certain constant types take up two entries"
+  (nth cp (dec n)))
 
 (defmulti cp-entry-value #(tag %2))
 
@@ -49,31 +53,33 @@
   (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
 
 (defmethod cp-entry-value CONSTANT_NameAndType [constant-pool pool-entry]
-  {:name (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-index pool-entry)))))
-   :descriptor (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:descriptor-index pool-entry)))))})
+  {:name (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-index pool-entry))))
+   :descriptor (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:descriptor-index pool-entry))))})
 
 (defmethod cp-entry-value CONSTANT_Class [constant-pool pool-entry]
   (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-index pool-entry))))))
 
-;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
-;; - in such a way that I can get rid of :spacer
+   ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
+   ;; - in such a way that I can get rid of :spacer
+   
 
 (defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-and-type-index pool-entry)))))
-   :class (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:class-index pool-entry)))))})
+  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-and-type-index pool-entry))))
+   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:class-index pool-entry))))})
 
-;; FIXME unify Method and Fieldref code
+   ;; FIXME unify Method and Fieldref code
+   
 (defmethod cp-entry-value CONSTANT_Fieldref [constant-pool pool-entry]
   {:name-and-type (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-and-type-index pool-entry)))))
-   :class (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:class-index pool-entry)))))})
+   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:class-index pool-entry))))})
 
 (defmethod cp-entry-value :default [java-class pool-entry]
-  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (bytes-to-integral-type (:tag pool-entry)))))))
+  (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (tag pool-entry))))))
 
 
 (defn constant-value
-  ([constant-pool pool-index]
-     (cp-entry-value constant-pool (nth constant-pool (dec pool-index)))))
+  ([constant-pool pool-index] 
+     (cp-entry-value constant-pool (cp-nth constant-pool pool-index))))
 
 
 (defn cp-find [constant-pool value-map]

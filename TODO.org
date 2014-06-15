@@ -1,5 +1,10 @@
-- [ ] constant-pool
-  - [ ] :spacer is a kludge and I hate it
+- [-] constant-pool
+  - [-] :spacer is a kludge and I hate it
+    - [-] cp-nth
+      - [X] Implement
+      - [ ] Use everywhere
+      - [ ] abstract out deindex-foo
+    - [ ] Remove :spacer and change cp-nth
   - [ ] Double?
   - [ ] constant-pool-entry-value
     - [ ] Finish all the multimethods
@@ -8,9 +13,9 @@
       instead of Strings and structs
     - [ ] Abstract out all the calculation and dereferencing repetitive
     code for :whatever-index
+      - Could this by repurposing constant-value?
     - [ ] Unify field and method ref code
 
-
-
-  
+- [ ] tag
+  - [ ] Remove remaining uses of (bytes-to-integral-type (:tag foo))
 
