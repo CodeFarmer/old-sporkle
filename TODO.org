@@ -6,6 +6,7 @@
       - [ ] abstract out deindex-foo
     - [ ] Remove :spacer and change cp-nth
   - [ ] Double?
+    - longBitsToDouble
   - [ ] constant-pool-entry-value
     - [ ] Finish all the multimethods
     - [ ] Consider having a lot of constant-pool entries that are

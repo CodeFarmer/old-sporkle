@@ -124,7 +124,7 @@
         constant-pool (:constant-pool clazz)]
     (is (= 1 (count (:interfaces clazz)))
         "class should now have one interface")
-    (is (= "java/io/Serializable" (get-name constant-pool (get-constant constant-pool (bytes-to-integral-type (first (:interfaces clazz))))))
+    (is (= "java/io/Serializable" (get-name constant-pool (cp-nth constant-pool (bytes-to-integral-type (first (:interfaces clazz))))))
         "first interface should be an index that points to something in the constant pool with the right name")))
 
 

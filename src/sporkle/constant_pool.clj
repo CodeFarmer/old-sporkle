@@ -35,6 +35,7 @@
 
 (defn cp-nth [cp n]
   "Retrieve the nth item from a constant pool, which is 1-indexed and in which certain constant types take up two entries"
+  ;; FIXME this will allow us to factor out the use of :spacer
   (nth cp (dec n)))
 
 (defmulti cp-entry-value #(tag %2))
@@ -57,7 +58,7 @@
    :descriptor (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:descriptor-index pool-entry))))})
 
 (defmethod cp-entry-value CONSTANT_Class [constant-pool pool-entry]
-  (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-index pool-entry))))))
+  (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-index pool-entry)))))
 
    ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
    ;; - in such a way that I can get rid of :spacer
@@ -70,7 +71,7 @@
    ;; FIXME unify Method and Fieldref code
    
 (defmethod cp-entry-value CONSTANT_Fieldref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (nth constant-pool (dec (bytes-to-integral-type (:name-and-type-index pool-entry)))))
+  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-and-type-index pool-entry))))
    :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:class-index pool-entry))))})
 
 (defmethod cp-entry-value :default [java-class pool-entry]

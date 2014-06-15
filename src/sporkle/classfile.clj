@@ -235,11 +235,6 @@
   (with-open [stream (io/input-stream filename)]
     (read-java-class (doall (byte-stream-seq stream)))))
 
-
-(defn get-constant [constant-pool index]
-  (nth constant-pool (dec index)))
-
-
 ;; for something with a name-index, get its name
 (defn get-name [constant-pool thing]
   "For anything that has a name-index in its struct, return the string represented in the class by that name-index. If no name-index, return nil.
@@ -265,7 +260,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 ;; consider making this internal
 (defn indexed-name [constant-pool index-bytes]
   "Given a constant pool and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
-  (get-name constant-pool (get-constant constant-pool (bytes-to-integral-type index-bytes))))
+  (get-name constant-pool (cp-nth constant-pool (bytes-to-integral-type index-bytes))))
 
 
 (defn class-name [java-class]
