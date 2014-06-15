@@ -137,10 +137,8 @@
     (let [[constant-pool-maplet remainder] (read-constant-pool-maplet (drop 8 (byte-stream-seq (io/input-stream "test/fixtures/LongFieldStaticInit.class"))))
           constant-pool (:constant-pool constant-pool-maplet)]
 
-      (is (= 19 (count constant-pool))
-          "The constant pool has only 18 constants, but there should be a spacer for the float")
-      (is (= [:spacer] (:tag (nth constant-pool 2)))
-          "The float spacer should be at cp-index 3"))))
+      (is (= 18 (count constant-pool))
+          "The constant pool has only 18 constants (no obsolete spacer)"))))
 
 (deftest test-read-attribute
 

@@ -178,10 +178,13 @@
   [acc count key readfn bytes]
   (if (zero? count) [{key acc} bytes]
       (let [[descriptor remainder] (readfn bytes)]
-        (if (#{CONSTANT_Double CONSTANT_Long} (tag descriptor))
-          ;; "The constant_pool table is indexed from 1 to constant_pool_count-1."
-          (recur (conj (conj acc descriptor) {:tag [:spacer]}) (- count 2) key readfn remainder)
-          (recur (conj acc descriptor) (dec count) key readfn remainder)))))
+        (recur (conj acc descriptor)
+               (if (WIDE_CONSTANTS (tag descriptor))
+                 (- count 2)
+                 (dec count))
+               key
+               readfn
+               remainder))))
 
 ;; the constant pool, annoyingly, has a different way of expressing its length than every other struct list
 (defn read-constant-pool-maplet [bytes]
@@ -350,9 +353,6 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
 (defmethod constant-pool-entry-bytes CONSTANT_Double [cp-entry]
   (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
-
-(defmethod constant-pool-entry-bytes :spacer [cp-entry]
-  [])
 
 
 (defn opcodes-to-code-bytes

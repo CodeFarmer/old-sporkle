@@ -2,10 +2,10 @@
   - [-] :spacer is a kludge and I hate it
     - [-] cp-nth
       - [X] Implement
-      - [ ] Use everywhere
+      - [X] Use everywhere
       - [ ] abstract out deindex-foo
-    - [ ] Remove :spacer and change cp-nth
-  - [ ] Double?
+    - [X] Remove :spacer and change cp-nth
+  - [ ] Double!
     - longBitsToDouble
   - [ ] constant-pool-entry-value
     - [ ] Finish all the multimethods

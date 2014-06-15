@@ -23,6 +23,8 @@
 (def ^:const CONSTANT_MethodType         16)
 (def ^:const CONSTANT_InvokeDynamic      18)
 
+(def WIDE_CONSTANTS #{CONSTANT_Double CONSTANT_Long})
+
 
 ;; constant pool methods, consider consolidating after you know what shape they are
 ;; pass the constant pool, as some things evaluate to indices into it which should be followed
@@ -35,8 +37,12 @@
 
 (defn cp-nth [cp n]
   "Retrieve the nth item from a constant pool, which is 1-indexed and in which certain constant types take up two entries"
-  ;; FIXME this will allow us to factor out the use of :spacer
-  (nth cp (dec n)))
+  (if (= 1 n)
+    (first cp)
+    (recur (rest cp)
+           (if (WIDE_CONSTANTS (tag (first cp)))
+             (- n 2)
+             (dec n)))))
 
 (defmulti cp-entry-value #(tag %2))
 
@@ -61,8 +67,6 @@
   (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-index pool-entry)))))
 
    ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
-   ;; - in such a way that I can get rid of :spacer
-   
 
 (defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
   {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-and-type-index pool-entry))))
