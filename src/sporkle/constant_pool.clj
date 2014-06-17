@@ -31,9 +31,7 @@
 
 (defn tag [unpacked-struct]
   (let [t (:tag unpacked-struct)]
-    (if (keyword? (first t))
-      (first t)
-      (bytes-to-integral-type t))))
+      (bytes-to-integral-type t)))
 
 (defn cp-nth [cp n]
   "Retrieve the nth item from a constant pool, which is 1-indexed and in which certain constant types take up two entries"
