@@ -25,7 +25,7 @@
 (defn friendly-cp-entry [constant-pool entry]
   (list 'cp-entry (-get-symbol-for-constant-tag (first (:tag entry))) (cp-entry-value constant-pool entry)))
 
-(def friendly-attr)
+(declare friendly-attr)
 
 ;; TODO rewrite using threading macros, this is awful
 (defn friendly-code

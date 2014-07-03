@@ -125,8 +125,7 @@
 
 ;; read-attribute ;; ;; read-attribute ;; ;; read-attribute ;; ;; read-attribute ;; ;; read-attribute ;;
 
-;; forward declaration; what is the correct/idiomatic way to do this?
-(def read-attribute)
+(declare read-attribute)
 
 ;; attributes are structured according to their names
 
