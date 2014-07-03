@@ -74,7 +74,7 @@
           "should record the correct tag")
       (is (= [0x00 0x05] (:string-index entry))
           "should record the string-index bytes")
-      (is (= [0x10 0x00])
+      (is (= [0x10 0x00] rest)
           "should leave the correct remainder")))
 
   (testing "Reading a float constant, with a trailing byte"
@@ -159,8 +159,8 @@
 
   (testing "reading an empty attribute list"
     
-    (is (= [{:attributes []} [0x01 0x02]
-            (read-attributes-maplet nil [0x00 0x00 0x01 0x02])])
+    (is (= [{:attributes []} [0x01 0x02]]
+           (read-attributes-maplet nil [0x00 0x00 0x01 0x02]))
         "should return the byte stream, minus the first two zero bytes that display the count"))
   
   (testing "reading a simple attribute list, two attributes long, with some trailing bytes")

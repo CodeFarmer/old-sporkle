@@ -30,7 +30,7 @@
         (is (= 0x00000100 b) "should return the correct 3rd-byte integer"))
       (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A])]
         (is (= java.lang.Long (type b)) "should return a long")
-        (is (= 0x0912F42A) "should return the correct multi-byte integer"))
+        (is (= 0x0912F42A b) "should return the correct multi-byte integer"))
       (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x01])]
         (is (= java.lang.Long (type b)) "should return a long")
         (is (= -1 b) "should return the correct signed integer")))
