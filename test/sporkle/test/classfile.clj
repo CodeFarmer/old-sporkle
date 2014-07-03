@@ -1,8 +1,10 @@
 (ns sporkle.test.classfile
-  (:use [sporkle.core])
-  (:use [sporkle.classfile])
-  (:use sporkle.constant-pool)
-  (:use [clojure.test])
+  (:require [sporkle.core
+             :refer [byte-from-unsigned bytes-to-integral-type bytes-to-unsigned-integral-type byte-stream-seq]])
+  (:require [sporkle.classfile :refer :all])
+  (:require [sporkle.constant-pool
+             :refer [constant-value cp-entry-value cp-find-utf8 tag CONSTANT_Double CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_String CONSTANT_Utf8]])
+  (:require  [clojure.test :refer [deftest is testing]])
   (:require [clojure.java.io :as io]))
 
 ;; this file now tests a bunch of constant-pool stuff, maybe split?

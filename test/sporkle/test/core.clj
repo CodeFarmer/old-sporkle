@@ -1,6 +1,6 @@
 (ns sporkle.test.core
-  (:use [sporkle.core])
-  (:use [clojure.test])
+  (:require [sporkle.core :refer :all])
+  (:require [clojure.test :refer [deftest is testing]])
   (:require [clojure.java.io :as io])
   (:import  [java.io ByteArrayOutputStream]))
 
