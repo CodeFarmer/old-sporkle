@@ -1,7 +1,8 @@
 (ns sporkle.test.friendly
-  (:use [sporkle.friendly])
-  (:use [sporkle.classfile])
-  (:use [clojure.test]))
+  (:require [sporkle.friendly :refer :all])
+  (:require [sporkle.classfile
+             :refer [attribute-named read-java-class-file]])
+  (:require [clojure.test :refer [deftest is testing]]))
 
 (deftest test-friendly-code
 

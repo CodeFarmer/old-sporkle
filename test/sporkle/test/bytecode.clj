@@ -1,6 +1,6 @@
 (ns sporkle.test.bytecode
-  (:use [sporkle.bytecode])
-  (:use [clojure.test]))
+  (:require [sporkle.bytecode :refer :all])
+  (:require [clojure.test :refer [deftest is testing]]))
 
 (deftest test-syms-to-opcodes
   (is (= [:sipush 0x11 2 1 nil] (syms-to-opcodes :sipush))))

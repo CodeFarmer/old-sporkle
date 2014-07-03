@@ -1,7 +1,7 @@
 (ns sporkle.test.constant_pool
-  (:use [sporkle.classfile])
-  (:use sporkle.constant-pool)
-  (:use [clojure.test]))
+  (:require [sporkle.classfile :refer [read-java-class-file]])
+  (:require [sporkle.constant-pool :refer :all])
+  (:require [clojure.test :refer [deftest is testing]]))
 
 (deftest test-constant-pool-value
 

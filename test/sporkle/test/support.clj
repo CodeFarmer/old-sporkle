@@ -1,8 +1,8 @@
 (ns sporkle.test.support
-  (use     [clojure.test])
-  (require [clojure.java.io :as io])
-  (use     [sporkle.core])
-  (import  [sporkle.test ByteLoader]))
+  (:require [clojure.test :refer [deftest is testing]])
+  (:require [clojure.java.io :as io])
+  (:require [sporkle.core :refer [read-stream-to-byte-array]])
+  (:import  [sporkle.test ByteLoader]))
 
 
 (deftest test-class-loader

@@ -1,18 +1,20 @@
 (ns sporkle.test.java-class
   
-  (:use [clojure.test])
-  (:use [sporkle.core])
-  (:use [sporkle.java-class])
-  (:use [sporkle.classfile])
-  (:use [sporkle.test.support])
-  (:use sporkle.constant-pool)
+  (:require [clojure.test :refer [deftest is testing]])
+  (:require [sporkle.core
+             :refer [byte-from-unsigned bytes-to-integral-type byte-stream-seq]])
+  (:require [sporkle.java-class
+             :refer [java-class jc-implementing-interface jc-with-empty-constructor jc-with-field jc-with-method public]])
+  (:require [sporkle.classfile
+             :refer [get-name class-name read-java-class super-class-name write-class-header write-java-class ACC_PUBLIC]])
+  (:require [sporkle.constant-pool :refer [cp-find cp-nth cp-with-constant CONSTANT_Utf8]])
   (:require [clojure.java.io :as io])
   (:import  [java.io ByteArrayOutputStream])
   (:import  [sporkle.test ByteLoader]))
 
 
 (deftest test-cp-find
-  (testing "With s real class constant pool"
+  (testing "With a real class constant pool"
     (let [constant-pool (:constant-pool (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))))]
       
       (is (= 11 (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes "Nothing"))}))
