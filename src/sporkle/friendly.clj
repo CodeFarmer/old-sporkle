@@ -1,8 +1,10 @@
 (ns sporkle.friendly 
-  (:use sporkle.core)
-  (:use sporkle.bytecode)
-  (:use sporkle.classfile)
-  (:use sporkle.constant-pool)
+  (:require [sporkle.bytecode
+             :refer [bytes-to-opcodes]])
+  (:require [sporkle.classfile
+             :refer [attribute-name]])
+  (:require [sporkle.constant-pool
+             :refer [cp-entry-value]])
   (:require [clojure.java.io :as io]))
 
 ;; FIXME consider def, not a function any more 

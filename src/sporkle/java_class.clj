@@ -1,8 +1,11 @@
 (ns sporkle.java-class
-  (:use [sporkle.core])
-  (:use [sporkle.classfile])
-  (:use [sporkle.bytecode])
-  (:use [sporkle.constant-pool]))
+  (:require [sporkle.core
+             :refer [bytes-to-integral-type int-to-byte-pair two-byte-index MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
+  (:require [sporkle.classfile
+             ;; FIXME: does cp-with-code-attribute go in constant-pool?
+             :refer [cp-with-code-attribute ACC_PUBLIC ACC_SUPER]])
+  (:require [sporkle.constant-pool
+             :refer [cp-with-class cp-with-utf8]]))
 
 
 (defn public [thing]

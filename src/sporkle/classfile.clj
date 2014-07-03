@@ -1,7 +1,10 @@
 (ns sporkle.classfile  
-  (:use sporkle.core)
-  (:use sporkle.bytecode)
-  (:use sporkle.constant-pool)
+  (:require [sporkle.core
+             :refer [byte-from-unsigned byte-stream-seq bytes-to-integral-type four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
+  (:require [sporkle.bytecode
+             :refer [syms-to-opcodes]])
+  (:require [sporkle.constant-pool
+             :refer [constant-value cp-find-utf8 cp-nth cp-with-utf8 tag CONSTANT_Class CONSTANT_Double CONSTANT_Integer CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_InvokeDynamic CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_MethodType CONSTANT_NameAndType CONSTANT_String CONSTANT_Utf8 WIDE_CONSTANTS]])
   (:require [clojure.java.io :as io]))
 
 ;; ClassFile {

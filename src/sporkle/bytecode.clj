@@ -1,6 +1,6 @@
 (ns sporkle.bytecode
-  (:use sporkle.constant-pool)
-  (:use sporkle.core))
+  (:require [sporkle.constant-pool :refer [cp-with-method]])
+  (:require [sporkle.core :refer [two-byte-index]]))
 
 
 ;; bc-args-fns
@@ -11,11 +11,11 @@
 ;; FIXME have the opcode dispatcher check the number of bytes :)
 (defn bc-method-ref
   "Encode a method ref - to start with this must be encoded as a class name, a method name and a method descriptor. For example, 'java.lang.String', '<init>', '()V'"
-  [cp aseq]
+  [pool aseq]
   (let [[class-str method-str method-arg-descriptor-str & remainder] aseq
-        [cp descriptor-index] (cp-with-method cp class-str method-str method-arg-descriptor-str)]
+        [pool descriptor-index] (cp-with-method pool class-str method-str method-arg-descriptor-str)]
 
-    [cp (two-byte-index descriptor-index) remainder]))
+    [pool (two-byte-index descriptor-index) remainder]))
 
 
 ;; this is lifted verbatim from Pork's jopcode.py... unfortunately I can't use that to wiggle out from mistakes, because I wrote that too :(
