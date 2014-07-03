@@ -1,5 +1,6 @@
 (ns sporkle.constant-pool
-  (:use sporkle.core)
+  (:require [sporkle.core
+             :refer [bytes-to-integral-type each-with-index two-byte-index]])
   (:require [clojure.string :as str]))
 
 
