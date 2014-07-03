@@ -9,9 +9,9 @@
 ;; FIXME syntaxt checking - type and number
 ;; FIXME syntax checking for method arg descriptors
 ;; FIXME have the opcode dispatcher check the number of bytes :)
-(defn bc-method-ref [cp aseq]
+(defn bc-method-ref
   "Encode a method ref - to start with this must be encoded as a class name, a method name and a method descriptor. For example, 'java.lang.String', '<init>', '()V'"
-
+  [cp aseq]
   (let [[class-str method-str method-arg-descriptor-str & remainder] aseq
         [cp descriptor-index] (cp-with-method cp class-str method-str method-arg-descriptor-str)]
 

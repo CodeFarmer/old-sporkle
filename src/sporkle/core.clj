@@ -11,8 +11,9 @@
       ()
       (cons b (lazy-seq (byte-stream-seq stream))))))
 
-(defn read-stream-to-byte-array [stream]
+(defn read-stream-to-byte-array 
   "FIXME this should not be necessary; either that or ditch byte-stream-seq (which maybe doesn't really need to be lazy). Or at least buffer it, this will be slow reading big things (will it ever read big things?)."
+  [stream]
   (let [baos (java.io.ByteArrayOutputStream.)]
     (loop [b (.read stream)]
       (if (= b -1)
@@ -52,8 +53,9 @@
        (- acc)
        (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
 
-(defn byte-from-unsigned [i]
+(defn byte-from-unsigned 
   "Try and coerce an integer in the range Byte.MIN_VALUE, Byte.MAX_VALUE from an unsigned integer between 0x00 and 0xFF. Behaviour is undefined outside those values!"
+  [i]
   (let [sign (bit-and  0x80 i)
         size (bit-and  0x7F i)]
     (- size sign)))
@@ -104,22 +106,26 @@ Returns a pair [map, remainder], so it can nest within itself"
 
 ;; This is for locating constants by name and returning the index by
 ;; which to refer to them in the class
-(defn each-with-index [aseq]
+(defn each-with-index
   "Given a seq, return a seq of pairs (vectors) containing the elements of the seq, and the index at which they appear."
+  [aseq]
   (map vector aseq (iterate inc 0)))
 
 
-(defn write-bytes [stream byte-seq]
+(defn write-bytes
   "Write the bytes from byte-seq into stream, and return stream"
+  [stream byte-seq]
   (doseq [b byte-seq] (.write stream b))
   stream)
 
 
-(defn two-byte-index [i]
+(defn two-byte-index
   "Given an integer, return a byte pair as used by the classfile format to describe an array index"
+  [i]
   [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
 
 
-(defn four-byte-count [i]
+(defn four-byte-count
   "Given an integer, return a byte quad, used by the classfile format to describe a count or size"
+  [i]
   [(bit-and 0xFF000000 i) (bit-and 0x00FF00 i) (bit-and 0x0000FF00 i) (bit-and 0x000000FF i)])

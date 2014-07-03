@@ -33,8 +33,9 @@
   (let [t (:tag unpacked-struct)]
       (bytes-to-integral-type t)))
 
-(defn cp-nth [cp n]
+(defn cp-nth
   "Retrieve the nth item from a constant pool, which is 1-indexed and in which certain constant types take up two entries"
+  [cp n]
   (if (= 1 n)
     (first cp)
     (recur (rest cp)
@@ -85,9 +86,9 @@
      (cp-entry-value constant-pool (cp-nth constant-pool pool-index))))
 
 
-(defn cp-find [constant-pool value-map]
+(defn cp-find 
   "Find the cp-index into constant pool where a constant with particular contents can be found (remember, cp-indices start at one and have other potentially annoying behaviour)."
-  
+  [constant-pool value-map]
   (loop [indexed-cp (each-with-index constant-pool)]
     (if (empty? indexed-cp)
       nil
@@ -97,26 +98,28 @@
           (recur (rest indexed-cp)))))))
 
 
-(defn cp-find-utf8 [constant-pool string]
+(defn cp-find-utf8
   "Shortcut to cp-find for UTF-8 strings, which is a very common case"
+  [constant-pool string]
   (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
 
 
-(defn cp-with-constant [constant-pool constant-info]
+(defn cp-with-constant
   "Given a pool and a constant structure, return the constant pool containing the constant (adding it if necessary), and its index"
+  [constant-pool constant-info]
   (if-let [index (cp-find constant-pool constant-info)]
     [constant-pool index]
     [(conj constant-pool constant-info) (+ 1 (count constant-pool))]))
 
-(defn cp-with-utf8 [constant-pool string]
+(defn cp-with-utf8
   "Given a constant pool and a string, return a vector containing the constant pool with the Utf8 constant, and the cp index"
+  [constant-pool string]
   (cp-with-constant constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
 
 
-(defn cp-with-class [constant-pool string]
-  
+(defn cp-with-class
   "Given a constant pool and a string, return a vector containing the constant pool containing the string as a Utf8 constant and a Class constant whose name-index aligns with it, and the cp index of the class constant"
-  
+  [constant-pool string]
   (let [[new-cp idx] (cp-with-utf8 constant-pool string)]
     (cp-with-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
 

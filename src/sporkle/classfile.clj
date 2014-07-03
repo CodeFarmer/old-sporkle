@@ -233,17 +233,18 @@
              (partial read-attributes-maplet constant-pool)]
             bytes)))))
 
-(defn read-java-class-file [filename]
+(defn read-java-class-file
   "Convenience method; read a java-class map from a named file"
+  [filename]
   (with-open [stream (io/input-stream filename)]
     (read-java-class (doall (byte-stream-seq stream)))))
 
 ;; for something with a name-index, get its name
-(defn get-name [constant-pool thing]
+(defn get-name
   "For anything that has a name-index in its struct, return the string represented in the class by that name-index. If no name-index, return nil.
 
 NOTE not called 'name' like the others of its ilk in order not to clash"
-
+  [constant-pool thing]
   (if (nil? (:name-index thing))
     nil
     (constant-value constant-pool (bytes-to-integral-type (:name-index thing)))))
@@ -255,14 +256,15 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 
 
-(defn descriptor [constant-pool meth]
+(defn descriptor
   "Return the descriptor string for a method (or anything else with a descriptor-index"
+  [constant-pool meth]
   (constant-value constant-pool (bytes-to-integral-type (:descriptor-index meth))))
 
-
 ;; consider making this internal
-(defn indexed-name [constant-pool index-bytes]
+(defn indexed-name
   "Given a constant pool and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
+  [constant-pool index-bytes]
   (get-name constant-pool (cp-nth constant-pool (bytes-to-integral-type index-bytes))))
 
 
@@ -281,20 +283,23 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 
 ;; only necessary because attributes don't have a name-index
-(defn attribute-name [constant-pool attribute]
+(defn attribute-name
   "see get-name"
+  [constant-pool attribute]
   (if (nil? (:attribute-name-index attribute))
     nil
     (constant-value constant-pool (bytes-to-integral-type (:attribute-name-index attribute)))))
 
 
-(defn interface-names [java-class]
+(defn interface-names
   "Return an array of strings that are the qualified classnames of a class' implemented interfaces"
+  [java-class]
   (map (partial indexed-name java-class) (:interfaces java-class)))
 
 
-(defn attribute-named [constant-pool thing name]
+(defn attribute-named
   "Retrieve the :attributes member of thing whose attribute-name-index corresponds to the location of 'name' in the constant pool"
+  [constant-pool thing name]
   (when-let [idx (cp-find-utf8 constant-pool name)]
     (loop [attribs (seq (:attributes thing))]
       (if (empty? attribs)
@@ -394,9 +399,11 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
              ))))))
 
 
-(defn cp-with-code-attribute [cp max-stack max-locals pseudocode]
+(defn cp-with-code-attribute
 
   "Return a suitably updated constant pool, plus a Code Attribute (see JVM spec section 4.7.3) corresponding to the opcodes (translated into a byte array). Presently returns no exception table or further attributes."
+
+  [cp max-stack max-locals pseudocode]
 
   (let [[cp name-index] (cp-with-utf8 cp "Code")
         [cp code-bytes] (opcodes-to-code-bytes cp pseudocode)
