@@ -55,11 +55,20 @@
         "0 should be the easiest case")
     (is (= 5 (byte-from-unsigned 5))
         "Working for small numbers")
-    (is (= 127 (byte-from-unsigned 127))))
+    (is (= 127 (byte-from-unsigned 127))
+        "127 is the highest positive number"))
 
+  (testing "negative numbers and edge cases"
+
+    (is (= -128 (byte-from-unsigned 0x80)) "0x80 is the sign bit and minimum value")
+    (is (= -127 (byte-from-unsigned 0x81)) "0x81 is one greater than the minimum value")
+    (is (= -1   (byte-from-unsigned 0xFF)) "0xFF is the highes negative number, or -1")))
+
+
+(deftest test-bytes-to-unsigned-integral-type
   (testing "for values between 128 and 255"
 
-    (is (= 0xFE (bytes-to-integral-type [(byte-from-unsigned 0xFE)])))))
+    (is (= 0xFE (bytes-to-unsigned-integral-type [(byte-from-unsigned 0xFE)])))))
 
 
 (deftest test-unpack-struct
@@ -103,17 +112,6 @@
 (deftest test-each-with-index
   (is (= [] (each-with-index [])) "should return empty seq when input is empty")
   (is (= [[:a 0] [:b 1] [nil 2] [:c 3]] (each-with-index [:a :b nil :c]))))
-
-
-(deftest test-byte-from-unsigned
-
-  (is (= 0   (byte-from-unsigned 0x00)) "0 is the simplest case")
-  (is (= 1   (byte-from-unsigned 0x01)) "1 is simple")
-  (is (= 127 (byte-from-unsigned 0x7F)) "127 is the highest positive number")
-
-  (is (= -128 (byte-from-unsigned 0x80)) "0x80 is the sign bit and minimum value")
-  (is (= -127 (byte-from-unsigned 0x81)) "0x81 is one greater than the minimum value")
-  (is (= -1   (byte-from-unsigned 0xFF)) "0xFF is the highes negative number, or -1"))
 
 
 (deftest test-write-bytes
