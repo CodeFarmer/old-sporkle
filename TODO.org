@@ -20,3 +20,18 @@
 - [ ] tag
   - [ ] Remove remaining uses of (bytes-to-integral-type (:tag foo))
 
+* code organisation
+
+- [ ] What shape should the code actually be?
+
+- [ ] How should classes be expressed?
+  - [ ] Does the intermediate struct of byte arrays really make sense?
+    - The friendly form probably doesn't need a constant pool, for example
+    - [ ] Is it possible to parse out the constant pool without it?
+      - Specifically can CP entries contain indices that are ahead of
+        themselves in the pool? The spec does not seem to prevent it.
+    - [ ] Having said that, do we need it for writing?
+      - Can we just write directly from the friendly form?
+
+- [ ] What exactly should the friendly form look like?
+  - Maybe this is actually the first question to ask.
