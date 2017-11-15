@@ -61,13 +61,13 @@
     (is (= -1   (byte-from-unsigned 0xFF)) "0xFF is the highes negative number, or -1")))
 
 
-(deftest test-bytes-to-unsigned-integral-type
+(deftest test-bytes-to-long
   (testing "for values between 128 and 255"
 
-    (is (= 0xFE (bytes-to-unsigned-integral-type [0xFE]))))
+    (is (= 0xFE (bytes-to-long [0xFE]))))
   (testing "for values between 0 and 127"
-    (is (= 0x0E (bytes-to-unsigned-integral-type [0x0E])))
-    (is (= 0x7F (bytes-to-unsigned-integral-type [0x7F])))))
+    (is (= 0x0E (bytes-to-long [0x0E])))
+    (is (= 0x7F (bytes-to-long [0x7F])))))
 
 
 (deftest test-unpack-struct

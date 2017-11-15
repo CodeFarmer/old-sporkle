@@ -34,14 +34,14 @@
         (do (.write baos b)
             (recur (.read stream)))))))
 
-(defn bytes-to-unsigned-integral-type
+(defn bytes-to-long
   
   "Given a big-endian stream of bytes, convert those to a long of the correct value assuming the target value is positive. NOTE also expects that 'bytes' actually means 'unsigned ints with 8 significant bits'"
   
   ([bytes]
      (if (empty? bytes)
        nil
-       (bytes-to-unsigned-integral-type 0 bytes)))
+       (bytes-to-long 0 bytes)))
 
   ([acc bytes]
      (if (empty? bytes)
@@ -50,7 +50,7 @@
 
 (defn bytes-to-int
   [bytes]
-  (int-from-unsigned (bytes-to-unsigned-integral-type bytes)))
+  (int-from-unsigned (bytes-to-long bytes)))
 
 (defn int-to-byte-pair [i]
   [(bit-and i 0xFF00) (bit-and i 0x00FF)])

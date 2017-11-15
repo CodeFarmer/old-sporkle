@@ -1,6 +1,6 @@
 (ns sporkle.classfile  
   (:require [sporkle.core
-             :refer [byte-from-unsigned byte-stream-seq bytes-to-unsigned-integral-type four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
+             :refer [byte-from-unsigned byte-stream-seq bytes-to-long four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
   (:require [sporkle.bytecode
              :refer [syms-to-opcodes]])
   (:require [sporkle.constant-pool
@@ -49,7 +49,7 @@
 
 
 (defn access-flags [unpacked-struct]
-  (bytes-to-unsigned-integral-type (:access-flags unpacked-struct)))
+  (bytes-to-long (:access-flags unpacked-struct)))
 
 
 
@@ -63,7 +63,7 @@
 
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
-    (let [length (bytes-to-unsigned-integral-type (take 2 rest))]
+    (let [length (bytes-to-long (take 2 rest))]
       [{:tag [tag] :bytes (take length (drop 2 rest))}
        (drop (+ length 2) rest)])))
 
@@ -115,7 +115,7 @@
 
   ([key readfn bytes]
 
-     (let [count (bytes-to-unsigned-integral-type (take 2 bytes)) remainder (drop 2 bytes)]
+     (let [count (bytes-to-long (take 2 bytes)) remainder (drop 2 bytes)]
        (read-struct-list-maplet [] count key readfn remainder)))
 
   ([acc count key readfn bytes]
@@ -132,12 +132,12 @@
 (defn -attribute-info-kind [constant-pool index-bytes _]
   (if (nil? constant-pool)
     :default ;; useful for debugging or testing
-    (constant-value constant-pool (bytes-to-unsigned-integral-type index-bytes))))
+    (constant-value constant-pool (bytes-to-long index-bytes))))
 
 (defmulti unpack-attribute-info -attribute-info-kind)
 
 (defn read-code-maplet [bytes]
-  (let [count (bytes-to-unsigned-integral-type (take 4 bytes))
+  (let [count (bytes-to-long (take 4 bytes))
         info (take count (drop 4 bytes))]
     [{:code info} (drop (+ 4 count) bytes)]))
 
@@ -163,7 +163,7 @@
 (defn read-attribute [constant-pool bytes]
 
   (let [name-index (take 2 bytes)
-        count (bytes-to-unsigned-integral-type (take 4 (drop 2 bytes)))
+        count (bytes-to-long (take 4 (drop 2 bytes)))
         remainder (drop 6 bytes)]
 
     [(into {:attribute-name-index name-index}
@@ -190,7 +190,7 @@
 
 ;; the constant pool, annoyingly, has a different way of expressing its length than every other struct list
 (defn read-constant-pool-maplet [bytes]
-  (let [count (dec (bytes-to-unsigned-integral-type (take 2 bytes))) remainder (drop 2 bytes)]
+  (let [count (dec (bytes-to-long (take 2 bytes))) remainder (drop 2 bytes)]
     (read-cp-entry-list-maplet [] count :constant-pool read-constant-pool-entry remainder)))
 
 
@@ -249,7 +249,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   [constant-pool thing]
   (if (nil? (:name-index thing))
     nil
-    (constant-value constant-pool (bytes-to-unsigned-integral-type (:name-index thing)))))
+    (constant-value constant-pool (bytes-to-long (:name-index thing)))))
 
 ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test
@@ -261,13 +261,13 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn descriptor
   "Return the descriptor string for a method (or anything else with a descriptor-index"
   [constant-pool meth]
-  (constant-value constant-pool (bytes-to-unsigned-integral-type (:descriptor-index meth))))
+  (constant-value constant-pool (bytes-to-long (:descriptor-index meth))))
 
 ;; consider making this internal
 (defn indexed-name
   "Given a constant pool and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
   [constant-pool index-bytes]
-  (get-name constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type index-bytes))))
+  (get-name constant-pool (cp-nth constant-pool (bytes-to-long index-bytes))))
 
 
 (defn class-name [java-class]
@@ -290,7 +290,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   [constant-pool attribute]
   (if (nil? (:attribute-name-index attribute))
     nil
-    (constant-value constant-pool (bytes-to-unsigned-integral-type (:attribute-name-index attribute)))))
+    (constant-value constant-pool (bytes-to-long (:attribute-name-index attribute)))))
 
 
 (defn interface-names
@@ -307,7 +307,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
       (if (empty? attribs)
         nil
         (let [attrib (first attribs)]
-          (if (= idx (bytes-to-unsigned-integral-type (:attribute-name-index attrib)))
+          (if (= idx (bytes-to-long (:attribute-name-index attrib)))
             attrib
             (recur (rest attribs))))))))
 
