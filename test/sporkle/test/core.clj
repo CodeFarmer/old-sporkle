@@ -31,17 +31,14 @@
         (is (= java.lang.Long (type b)) "should return a long")
         (is (= -1 b) "should return the correct signed integer")))
   
-    (comment (testing "given eight bytes"
-               (let [b (bytes-to-int (bytes [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x02]))]
-                 (is (= java.lang.Long (type b)) "should return a long")
-                 (is (= 653853357300184066 b)) "should return the correct multi-byte long")))
     
-    (comment    (testing "Clojure 1.3 behavior"
-                  (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x01])]
-                    (is (= java.lang.Long (type b)) "should return a long")
-                    (is (= -1 b)) "should return the correctly signed long")
-                  (let [b (bytes-to-integral-type [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
-                    (is (= java.lang.Long (type b)) "should not overflow into BigInteger even when bigger than Long.MAX_VALUE"))))))
+    
+    (testing "Clojure 1.3 behavior"
+        (let [b (bytes-to-long [0xFF 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF])]
+          (is (= java.lang.Long (type b)) "should return a long")
+          (is (= -1 b)) "should return the correctly signed long")
+        (let [b (bytes-to-long [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
+          (is (= java.lang.Long (type b)) "should not overflow into BigInteger even when bigger than Long.MAX_VALUE")))))
 
 
 (deftest test-byte-from-unsigned
@@ -67,7 +64,12 @@
     (is (= 0xFE (bytes-to-long [0xFE]))))
   (testing "for values between 0 and 127"
     (is (= 0x0E (bytes-to-long [0x0E])))
-    (is (= 0x7F (bytes-to-long [0x7F])))))
+    (is (= 0x7F (bytes-to-long [0x7F]))))
+
+  (testing "given eight bytes"
+    (let [b (bytes-to-long [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x02])]
+      (is (= java.lang.Long (type b)) "should return a long")
+      (is (= 653853357300184066 b)) "should return the correct multi-byte long")))
 
 
 (deftest test-unpack-struct
