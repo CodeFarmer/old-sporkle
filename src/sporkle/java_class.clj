@@ -1,6 +1,6 @@
 (ns sporkle.java-class
   (:require [sporkle.core
-             :refer [bytes-to-integral-type int-to-byte-pair two-byte-index MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
+             :refer [bytes-to-unsigned-integral-type int-to-byte-pair two-byte-index MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
   (:require [sporkle.classfile
              ;; FIXME: does cp-with-code-attribute go in constant-pool?
              :refer [cp-with-code-attribute ACC_PUBLIC ACC_SUPER]])
@@ -11,7 +11,7 @@
 (defn public [thing]
 
   ;; FIXME I am beginning to think having all the byte pairs and so on live in the classfile struct was a bad idea. Maybe just encode and decode at read and write time?
-  (let [decoded-access-flag (bytes-to-integral-type (get thing :access-flags 0))]
+  (let [decoded-access-flag (bytes-to-unsigned-integral-type (get thing :access-flags 0))]
 
     (assoc thing :access-flags (two-byte-index (bit-or decoded-access-flag ACC_PUBLIC)))))
 

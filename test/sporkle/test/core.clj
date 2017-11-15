@@ -13,39 +13,35 @@
       (testing "after some bytes have been taken"
         (is (= '(0xCA 0xFE) (take 2 cs)) "we should be able to retake bytes (ie., behave like a seq and not a stream")))))
 
-
 ;; TODO this currently ignores sign! Java doesn't... ;)
-(deftest test-bytes-to-integral-type
+(deftest test-bytes-to-int
   
-  (testing "bytes-to-integral-type"
-
-    (testing "given no bytes"
-      (is (nil? (bytes-to-integral-type ()))))
+  (testing "bytes-to-int"
 
     (testing "given four bytes"
-      (let [b4 (bytes-to-integral-type [0 0 0 4])]
+      (let [b4 (bytes-to-int [0 0 0 4])]
         (is (= java.lang.Long (type b4)) "should return a boxed long")
         (is (= 4 b4) "should return the correct low byte number"))
-      (let [b (bytes-to-integral-type [0x00 0x00 0x01 0x00])]
+      (let [b (bytes-to-int [0x00 0x00 0x01 0x00])]
         (is (= 0x00000100 b) "should return the correct 3rd-byte integer"))
-      (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A])]
+      (let [b (bytes-to-int [0x09 0x12 0xF4 0x2A])]
         (is (= java.lang.Long (type b)) "should return a long")
         (is (= 0x0912F42A b) "should return the correct multi-byte integer"))
-      (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x01])]
+      (let [b (bytes-to-int [0xff 0xff 0xff 0xff])]
         (is (= java.lang.Long (type b)) "should return a long")
         (is (= -1 b) "should return the correct signed integer")))
   
-    (testing "given eight bytes"
-      (let [b (bytes-to-integral-type [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x02])]
-        (is (= java.lang.Long (type b)) "should return a long")
-        (is (= 653853357300184066 b)) "should return the correct multi-byte long"))
+    (comment (testing "given eight bytes"
+               (let [b (bytes-to-int (bytes [0x09 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x02]))]
+                 (is (= java.lang.Long (type b)) "should return a long")
+                 (is (= 653853357300184066 b)) "should return the correct multi-byte long")))
     
-    (testing "Clojure 1.3 behavior"
-      (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x01])]
-        (is (= java.lang.Long (type b)) "should return a long")
-        (is (= -1 b)) "should return the correctly signed long")
-      (let [b (bytes-to-integral-type [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
-        (is (= java.lang.Long (type b)) "should not overflow into BigInteger even when bigger than Long.MAX_VALUE")))))
+    (comment    (testing "Clojure 1.3 behavior"
+                  (let [b (bytes-to-integral-type [0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x01])]
+                    (is (= java.lang.Long (type b)) "should return a long")
+                    (is (= -1 b)) "should return the correctly signed long")
+                  (let [b (bytes-to-integral-type [0xFF 0x12 0xF4 0x2A 0x09 0x12 0xF4 0x2])]
+                    (is (= java.lang.Long (type b)) "should not overflow into BigInteger even when bigger than Long.MAX_VALUE"))))))
 
 
 (deftest test-byte-from-unsigned
@@ -68,7 +64,10 @@
 (deftest test-bytes-to-unsigned-integral-type
   (testing "for values between 128 and 255"
 
-    (is (= 0xFE (bytes-to-unsigned-integral-type [(byte-from-unsigned 0xFE)])))))
+    (is (= 0xFE (bytes-to-unsigned-integral-type [0xFE]))))
+  (testing "for values between 0 and 127"
+    (is (= 0x0E (bytes-to-unsigned-integral-type [0x0E])))
+    (is (= 0x7F (bytes-to-unsigned-integral-type [0x7F])))))
 
 
 (deftest test-unpack-struct

@@ -1,6 +1,6 @@
 (ns sporkle.test.classfile
   (:require [sporkle.core
-             :refer [byte-from-unsigned bytes-to-integral-type bytes-to-unsigned-integral-type byte-stream-seq]])
+             :refer [byte-from-unsigned bytes-to-unsigned-integral-type byte-stream-seq]])
   (:require [sporkle.classfile :refer :all])
   (:require [sporkle.constant-pool
              :refer [constant-value cp-entry-value cp-find-utf8 tag CONSTANT_Double CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_String CONSTANT_Utf8]])
@@ -219,9 +219,9 @@
 
       (is (= 0xCAFEBABE (bytes-to-unsigned-integral-type (:magic java-class)))
           "gotta get the magic number right")
-      (is (= 0x0000 (bytes-to-integral-type (:minor-version java-class)))
+      (is (= 0x0000 (bytes-to-unsigned-integral-type (:minor-version java-class)))
           "minor version number of the class file")
-      (is (= 0x0032 (bytes-to-integral-type (:major-version java-class)))
+      (is (= 0x0032 (bytes-to-unsigned-integral-type (:major-version java-class)))
           "major version number of the class file")
       (is (= 12 (count (:constant-pool java-class)))
           "should read the correct number of constant pool entries")
@@ -305,7 +305,7 @@
       (is (not (nil? code-attrib))
           "Code attribute should not be nil")
 
-      (is (= (bytes-to-integral-type (:attribute-name-index code-attrib))
+      (is (= (bytes-to-unsigned-integral-type (:attribute-name-index code-attrib))
              (cp-find-utf8 constant-pool "Code"))
           "Code attribute should have name 'Code'")
 

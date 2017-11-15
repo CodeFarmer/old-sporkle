@@ -1,9 +1,22 @@
 (ns sporkle.core)
 
 
+(defn byte-from-unsigned 
+  "Try and coerce an integer in the range Byte.MIN_VALUE, Byte.MAX_VALUE from an unsigned long between 0x00 and 0xFF. Behaviour is undefined outside those values!"
+  [i]
+  (let [sign (bit-and 0x80 i)
+        size (bit-and 0x7F i)]
+    (- size sign)))
+
+(defn int-from-unsigned 
+  "Try and coerce an integer in the range Integer.MIN_VALUE, Integer.MAX_VALUE from an unsigned long between 0x00000000 and 0xFFFFFFFF. Behaviour is undefined outside those values!"
+  [i]
+  (let [sign (bit-and 0x80000000 i)
+        size (bit-and 0x7FFFFFFF i)]
+    (- size sign)))
+
 (defn byte-stream-seq
-  ;; FIXME this returns Longs, which are problematic when unsigned bytes are wanted - for example you can't just use to-byte-array on this seq, and you should!
-  "Returns a lazy sequence of bytes from a java.io.InputStream"
+  "Returns a lazy sequence of bytes from a java.io.InputStream. NOTE that these are actually unsigned ints that only have 8 significant bits"
 
   [^java.io.InputStream stream]
   (let [b (.read stream)]
@@ -21,10 +34,9 @@
         (do (.write baos b)
             (recur (.read stream)))))))
 
-
 (defn bytes-to-unsigned-integral-type
   
-  "Given a big-endian stream of bytes, convert those to a long of the correct value"
+  "Given a big-endian stream of bytes, convert those to a long of the correct value assuming the target value is positive. NOTE also expects that 'bytes' actually means 'unsigned ints with 8 significant bits'"
   
   ([bytes]
      (if (empty? bytes)
@@ -36,29 +48,9 @@
        acc
        (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
 
-
-(defn bytes-to-integral-type
-
-  "Given a big-endian stream of bytes, convert those to a long of the correct signed value"
-  
-  ([bytes]
-     (if (empty? bytes)
-       nil
-       (if (zero? (bit-and 0x80 (first bytes)))
-         (bytes-to-unsigned-integral-type 0 bytes)
-         (bytes-to-integral-type 0 (cons (- (first bytes) 0x80) (rest bytes))))))
-
-  ([acc bytes]
-     (if (empty? bytes)
-       (- acc)
-       (recur (+ (first bytes) (bit-shift-left acc 8)) (rest bytes)))))
-
-(defn byte-from-unsigned 
-  "Try and coerce an integer in the range Byte.MIN_VALUE, Byte.MAX_VALUE from an unsigned integer between 0x00 and 0xFF. Behaviour is undefined outside those values!"
-  [i]
-  (let [sign (bit-and  0x80 i)
-        size (bit-and  0x7F i)]
-    (- size sign)))
+(defn bytes-to-int
+  [bytes]
+  (int-from-unsigned (bytes-to-unsigned-integral-type bytes)))
 
 (defn int-to-byte-pair [i]
   [(bit-and i 0xFF00) (bit-and i 0x00FF)])

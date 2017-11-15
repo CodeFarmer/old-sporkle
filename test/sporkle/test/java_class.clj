@@ -2,7 +2,7 @@
   
   (:require [clojure.test :refer [deftest is testing]])
   (:require [sporkle.core
-             :refer [byte-from-unsigned bytes-to-integral-type byte-stream-seq]])
+             :refer [byte-from-unsigned bytes-to-unsigned-integral-type byte-stream-seq]])
   (:require [sporkle.java-class
              :refer [java-class jc-implementing-interface jc-with-empty-constructor jc-with-field jc-with-method public]])
   (:require [sporkle.classfile
@@ -126,7 +126,7 @@
         constant-pool (:constant-pool clazz)]
     (is (= 1 (count (:interfaces clazz)))
         "class should now have one interface")
-    (is (= "java/io/Serializable" (get-name constant-pool (cp-nth constant-pool (bytes-to-integral-type (first (:interfaces clazz))))))
+    (is (= "java/io/Serializable" (get-name constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (first (:interfaces clazz))))))
         "first interface should be an index that points to something in the constant pool with the right name")))
 
 

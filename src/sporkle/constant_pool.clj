@@ -1,6 +1,6 @@
 (ns sporkle.constant-pool
   (:require [sporkle.core
-             :refer [bytes-to-integral-type each-with-index two-byte-index]])
+             :refer [bytes-to-int bytes-to-unsigned-integral-type each-with-index two-byte-index]])
   (:require [clojure.string :as str]))
 
 
@@ -32,7 +32,7 @@
 
 (defn tag [unpacked-struct]
   (let [t (:tag unpacked-struct)]
-      (bytes-to-integral-type t)))
+      (bytes-to-unsigned-integral-type t)))
 
 (defn cp-nth
   "Retrieve the nth item from a constant pool, which is 1-indexed and in which certain constant types take up two entries"
@@ -50,33 +50,34 @@
   (str/join (map char (:bytes pool-entry))))
 
 (defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
-  (bytes-to-integral-type (:bytes pool-entry)))
+  (bytes-to-int (:bytes pool-entry)))
 
-(defmethod cp-entry-value CONSTANT_Long [constant-pool pool-entry]
-  (bit-or (bytes-to-integral-type (:low-bytes pool-entry))
-          (bit-shift-left (bytes-to-integral-type (:high-bytes pool-entry)) 32)))
+(comment FIXME now broken
+         (defmethod cp-entry-value CONSTANT_Long [constant-pool pool-entry]
+           (bit-or (bytes-to-integral-type (:low-bytes pool-entry))
+                   (bit-shift-left (bytes-to-integral-type (:high-bytes pool-entry)) 32))))
 
 (defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
-  (Float/intBitsToFloat (bytes-to-integral-type (:bytes pool-entry))))
+  (Float/intBitsToFloat (bytes-to-int (:bytes pool-entry))))
 
 (defmethod cp-entry-value CONSTANT_NameAndType [constant-pool pool-entry]
-  {:name (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-index pool-entry))))
-   :descriptor (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:descriptor-index pool-entry))))})
+  {:name (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:name-index pool-entry))))
+   :descriptor (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:descriptor-index pool-entry))))})
 
 (defmethod cp-entry-value CONSTANT_Class [constant-pool pool-entry]
-  (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-index pool-entry)))))
+  (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:name-index pool-entry)))))
 
    ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
 
 (defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-and-type-index pool-entry))))
-   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:class-index pool-entry))))})
+  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:name-and-type-index pool-entry))))
+   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:class-index pool-entry))))})
 
    ;; FIXME unify Method and Fieldref code
    
 (defmethod cp-entry-value CONSTANT_Fieldref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:name-and-type-index pool-entry))))
-   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-integral-type (:class-index pool-entry))))})
+  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:name-and-type-index pool-entry))))
+   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-unsigned-integral-type (:class-index pool-entry))))})
 
 (defmethod cp-entry-value :default [java-class pool-entry]
   (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (tag pool-entry))))))
