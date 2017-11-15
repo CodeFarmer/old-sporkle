@@ -4,6 +4,7 @@
   (:require [clojure.java.io :as io])
   (:import  [java.io ByteArrayOutputStream]))
 
+
 (deftest test-byte-stream-seq
   (testing "byte-stream-seq's seqiness"
     (let [cs (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))]
@@ -13,7 +14,7 @@
       (testing "after some bytes have been taken"
         (is (= '(0xCA 0xFE) (take 2 cs)) "we should be able to retake bytes (ie., behave like a seq and not a stream")))))
 
-;; TODO this currently ignores sign! Java doesn't... ;)
+
 (deftest test-bytes-to-int
   
   (testing "bytes-to-int"
