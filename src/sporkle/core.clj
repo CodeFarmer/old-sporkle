@@ -57,8 +57,8 @@
 
 ;; FIXME move to classfile?
 (def MAGIC_BYTES         [0xCA 0xFE 0xBA 0xBE])
-(def MAJOR_VERSION_BYTES [0x00 0x32])
-(def MINOR_VERSION_BYTES [0x00 0x00])
+(def MAJOR_VERSION        0x00032)
+(def MINOR_VERSION        0x0000)
 
 
 (defn unpack-struct
@@ -108,17 +108,19 @@ Returns a pair [map, remainder], so it can nest within itself"
   (map vector aseq (iterate inc 0)))
 
 
-(defn write-bytes
-  "Write the bytes from byte-seq into stream, and return stream"
-  [stream byte-seq]
-  (doseq [b byte-seq] (.write stream b))
-  stream)
-
-
 (defn two-byte-index
   "Given an integer, return a byte pair as used by the classfile format to describe an array index"
   [i]
   [(bit-and 0xFF00 i) (bit-and 0x00FF i)])
+
+
+(defn write-bytes
+  "Write the bytes from bytes into stream (unless bytes is a bare integer, in which case convert to seq), and return stream"
+  [stream bytes]
+  (if (integer? bytes)
+    (write-bytes stream (two-byte-index bytes))
+    (doseq [b bytes] (.write stream (byte-from-unsigned b))))
+  stream)
 
 
 (defn four-byte-count
