@@ -17,9 +17,9 @@
   (testing "With a real class constant pool"
     (let [constant-pool (:constant-pool (read-java-class (byte-stream-seq (io/input-stream "test/fixtures/Nothing.class"))))]
       
-      (is (= 11 (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes "Nothing"))}))
+      (is (= 11 (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes "Nothing"}))
           "The string 'Nothing' should be stored in a UTf8 constant with index 11")
-      (is (nil? (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes "Not a real Utf8 constant"))}))
+      (is (nil? (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes "Not a real Utf8 constant"}))
           "cp-find shoudl return nil when it can't find a constant"))))
 
 

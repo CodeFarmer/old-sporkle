@@ -64,7 +64,7 @@
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-long (take 2 rest))]
-      [{:tag [tag] :bytes (take length (drop 2 rest))}
+      [{:tag [tag] :bytes (String. (byte-array (map byte-from-unsigned (take length (drop 2 rest)))))}
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
@@ -218,7 +218,7 @@
   ;; need to read the constant pool first, mostly for the benefit of attribute unpacking logic
   (let [[partial-class remainder]
         (read-stream-maplets
-         [#(unpack-struct [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]] %)
+         [#(unpack-struct [[:magic 4] [:minor-version 2 bytes-to-long] [:major-version 2 bytes-to-long]] %)
           read-constant-pool-maplet]
          bytes)
         constant-pool (:constant-pool partial-class)]
@@ -226,7 +226,8 @@
     (into partial-class
           (first
            (read-stream-maplets
-            [#(unpack-struct [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]] %)
+            ;; FIXME DRY this up
+            [#(unpack-struct [[:magic 4] [:minor-version 2 bytes-to-long] [:major-version 2 bytes-to-long]] %)
              read-constant-pool-maplet
              #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
              #(read-struct-list-maplet :interfaces read-byte-pair %)

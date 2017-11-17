@@ -79,18 +79,24 @@
 
     (let [[java-class remainder]
           (unpack-struct
-            [[:magic 4 :unsigned] [:minor-version 2 :unsigned] [:major-version 2 :unsigned]]
+            [[:magic 4] [:minor-version 2 bytes-to-long] [:major-version 2 bytes-to-long]]
             [0xCA 0xFE 0xBA 0xBE 0x00 0x00 0x00 0x32  0x00 0x0D 0x0A 0x00])]
       (is (= (:magic java-class) [0xCA 0xFE 0xBA 0xBE]) "first 4 bytes should be 0xCAFEBABE")
-      (is (= (:minor-version java-class) [0x00 0x00]) "Next two bytes are the minor version, set to 0x0000")
-      (is (= (:major-version java-class) [0x00 0x32]) "Final two bytes are the major version, set to 0x0032")
+      (is (= (:minor-version java-class) 0x0000) "Next two bytes are the minor version, set to 0x0000")
+      (is (= (:major-version java-class) 0x0032) "Final two bytes are the major version, set to 0x0032")
       (is (= [0x00 0x0D 0x0A 0x00] remainder) "should return the remainder as a seq for further processing")))
   
   (testing "reading a struct with single-item fields"
 
     (let [[amap remainder] (unpack-struct [[:front-two 2] [:middle-one 1] [:back-two 2]] [1 2 3 4 5])]
-      (is (seq? (:front-two amap)) "multi-byte fields should no longer be seqs")
-      (is (= [3] (:middle-one amap)) "single-item fields should no longer be atomic"))))
+      (is (seq? (:front-two amap)) "multi-byte fields should be seqs")
+      (is (= [3] (:middle-one amap)) "single-item fields should no longer be atomic")))
+
+  (testing "reading a struct with handlers"
+
+    (let [[amap remainder] (unpack-struct [[:front-two 2 bytes-to-long] [:middle-one 1 bytes-to-long] [:back-two 2]] [1 2 3 4 5])]
+      (is (= 0x0102 (:front-two amap)) "multi-byte fields be handled")
+      (is (= 3 (:middle-one amap)) "single-item fields should be handled"))))
 
 ;; TODO consider making this read-bytes-and-return-map-plus-remainder form
 ;; into a macro, just for kicks

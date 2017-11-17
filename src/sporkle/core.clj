@@ -71,13 +71,17 @@ Partial applications conform to the expectations of read-stream-maplets."
 
   ([amap avec aseq]
      
-     (let [[field-key field-size & flags] (first avec)
+     (let [[field-key field-size handler-fn] (first avec)
            field-data (take field-size aseq)]
        
        (cond
         (nil? field-key) [amap aseq] ;; this is the return value
         (< field-size (count field-data)) (throw (IndexOutOfBoundsException. (str "Ran out of stream unpacking struct field " field-key ", needed " field-size ", got " field-data)))
-        :else (recur (assoc amap field-key field-data) (rest avec) (drop field-size aseq))))))
+        :else (recur (assoc amap field-key (if (nil? handler-fn)
+                                             field-data
+                                             (handler-fn field-data)))
+                     (rest avec)
+                     (drop field-size aseq))))))
 
 
 ;; Dammit the threading macro is *so* close to what I need

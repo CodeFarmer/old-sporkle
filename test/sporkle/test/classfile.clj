@@ -13,7 +13,7 @@
 
   (testing "Reading from a known UTF8 constant from a classfile, with some trailing bytes"
 
-    (let [[entry rest](read-constant-pool-entry
+    (let [[entry rest] (read-constant-pool-entry
                         [0x01 0x00 0x0C 0x4E  0x6F 0x74 0x68 0x69
                          0x6E 0x67 0x2E 0x6A  0x61 0x76 0x61 0x0C
                          ;; 0x61 is actually the last byte ^ of the entry
@@ -24,7 +24,9 @@
       (is (= CONSTANT_Utf8 (tag entry))
           "should correctly set the tag")
       (is (= 12 (count (:bytes entry)))
-          "should read the two-byte length correctly")))
+          "should read the two-byte length correctly")
+      (is (= "Nothing.java" (:bytes entry))
+          "should render the bytes as a String")))
   
   (testing "Reading an integer constant, with a trailing byte"
 
@@ -219,9 +221,9 @@
 
       (is (= 0xCAFEBABE (bytes-to-long (:magic java-class)))
           "gotta get the magic number right")
-      (is (= 0x0000 (bytes-to-long (:minor-version java-class)))
+      (is (= 0x0000 (:minor-version java-class))
           "minor version number of the class file")
-      (is (= 0x0032 (bytes-to-long (:major-version java-class)))
+      (is (= 0x0032 (:major-version java-class))
           "major version number of the class file")
       (is (= 12 (count (:constant-pool java-class)))
           "should read the correct number of constant pool entries")

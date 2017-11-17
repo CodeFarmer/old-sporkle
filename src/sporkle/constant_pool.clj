@@ -102,7 +102,7 @@
 (defn cp-find-utf8
   "Shortcut to cp-find for UTF-8 strings, which is a very common case"
   [constant-pool string]
-  (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+  (cp-find constant-pool {:tag [CONSTANT_Utf8] :bytes string}))
 
 
 (defn cp-with-constant
