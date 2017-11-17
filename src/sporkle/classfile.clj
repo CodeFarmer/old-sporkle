@@ -1,6 +1,6 @@
 (ns sporkle.classfile  
   (:require [sporkle.core
-             :refer [byte-from-unsigned byte-stream-seq bytes-to-long four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION_BYTES MINOR_VERSION_BYTES]])
+             :refer [byte-from-unsigned byte-stream-seq bytes-to-long four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION MINOR_VERSION]])
   (:require [sporkle.bytecode
              :refer [syms-to-opcodes]])
   (:require [sporkle.constant-pool
@@ -45,14 +45,6 @@
 (def ^:const ACC_STRICT       0x0800) ;; Method: floating-point mode is FP-strict
 
 
-;; some classfile byte extraction goodness
-
-
-(defn access-flags [unpacked-struct]
-  (bytes-to-long (:access-flags unpacked-struct)))
-
-
-
 ;; this is necessary for two reasons
 ;; 1) The indices are 1-based!
 ;; 2) Some constant pool entries count for two spaces!
@@ -72,20 +64,20 @@
 
 ; NOTE these next three are the same at the moment but that will change
 (defmethod read-constant-pool-entry CONSTANT_Methodref [bytes]
-  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_Fieldref [bytes]
-  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_InterfaceMethodref [bytes]
-  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Class [bytes]
-  (unpack-struct [[:tag 1] [:name-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:name-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_NameAndType [bytes]
-  (unpack-struct [[:tag 1] [:name-index 2] [:descriptor-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:name-index 2 bytes-to-long] [:descriptor-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_String [bytes]
-  (unpack-struct [[:tag 1] [:string-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:string-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Float [bytes]
   (unpack-struct [[:tag 1] [:bytes 4]] bytes))
@@ -96,13 +88,13 @@
   (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_MethodHandle [bytes]
-  (unpack-struct [[:tag 1] [:reference-kind 1] [:reference-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:reference-kind 1 bytes-to-long] [:reference-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_MethodType [bytes]
-  (unpack-struct [[:tag 1] [:descriptor-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:descriptor-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_InvokeDynamic [bytes]
-  (unpack-struct [[:tag 1] [:bootstrap-method-attr-index 2] [:name-and-type-index 2]] bytes))
+  (unpack-struct [[:tag 1] [:bootstrap-method-attr-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry :default [bytes]
   (let [tag (first bytes)]
@@ -197,7 +189,7 @@
 ;; constant-pool is needed for read-attributes
 (defn read-field-or-method-info [constant-pool bytes]
   (read-stream-maplets
-   [#(unpack-struct [[:access-flags 2] [:name-index 2] [:descriptor-index 2]] %)
+   [#(unpack-struct [[:access-flags 2 bytes-to-long] [:name-index 2 bytes-to-long] [:descriptor-index 2 bytes-to-long]] %)
     (partial read-attributes-maplet constant-pool)]
    bytes))
 
@@ -229,7 +221,7 @@
             ;; FIXME DRY this up
             [#(unpack-struct [[:magic 4] [:minor-version 2 bytes-to-long] [:major-version 2 bytes-to-long]] %)
              read-constant-pool-maplet
-             #(unpack-struct [[:access-flags 2] [:this-class 2] [:super-class 2]] %)
+             #(unpack-struct [[:access-flags 2 bytes-to-long] [:this-class 2 bytes-to-long] [:super-class 2 bytes-to-long]] %)
              #(read-struct-list-maplet :interfaces read-byte-pair %)
              #(read-struct-list-maplet :fields     (partial read-field-or-method-info constant-pool) %)
              #(read-struct-list-maplet :methods    (partial read-field-or-method-info constant-pool) %)
@@ -267,8 +259,8 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 ;; consider making this internal
 (defn indexed-name
   "Given a constant pool and a two-byte index, find the constant pointed to by the index (for example a Class or a NameAndType), and resolve its name-index attribute to a string"
-  [constant-pool index-bytes]
-  (get-name constant-pool (cp-nth constant-pool (bytes-to-long index-bytes))))
+  [constant-pool index]
+  (get-name constant-pool (cp-nth constant-pool index)))
 
 
 (defn class-name [java-class]
@@ -318,17 +310,15 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 ;; has test
 (defn write-class-header [stream]
-  (write-bytes stream (map byte-from-unsigned MAGIC_BYTES))
-  (write-bytes stream (map byte-from-unsigned MINOR_VERSION_BYTES))
-  (write-bytes stream (map byte-from-unsigned MAJOR_VERSION_BYTES)))
-
-
+  (write-bytes stream MAGIC_BYTES)
+  (write-bytes stream MINOR_VERSION)
+  (write-bytes stream MAJOR_VERSION))
 
 (defmulti constant-pool-entry-bytes tag)
 
 (defmethod constant-pool-entry-bytes CONSTANT_Utf8 [cp-entry]
   ;; not convinced this is a great idea
-  (flatten [(:tag cp-entry) (two-byte-index (count (:bytes cp-entry))) (:bytes cp-entry)]))
+  (flatten [(:tag cp-entry) (two-byte-index (count (:bytes cp-entry))) (seq (.getBytes (:bytes cp-entry)))]))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Integer [cp-entry]
   ;; take 4 ensures you don't over/underrun in case of mangled fields, is this actually useful?
@@ -339,7 +329,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn ref-bytes [cp-entry]
   ;; these are all already starting to look very repetitive, and they also duplicate information
   ;; in read-constant-pool-entry - FIXME
-  (flatten [(:tag cp-entry) (take 2 (:class-index cp-entry)) (take 2 (:name-and-type-index cp-entry))]))
+  (flatten [(:tag cp-entry) (two-byte-index (:class-index cp-entry)) (two-byte-index (:name-and-type-index cp-entry))]))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Methodref [cp-entry]
   (ref-bytes cp-entry))
@@ -349,13 +339,13 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (ref-bytes cp-entry))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Class [cp-entry]
-  (into (:tag cp-entry) (:name-index cp-entry)))
+  (conj (:tag cp-entry) (:name-index cp-entry)))
 
 (defmethod constant-pool-entry-bytes CONSTANT_NameAndType [cp-entry]
-  (flatten [(:tag cp-entry) (take 2 (:name-index cp-entry)) (take 2 (:descriptor-index cp-entry))]))
+  (flatten [(:tag cp-entry) (:name-index cp-entry) (:descriptor-index cp-entry)]))
 
 (defmethod constant-pool-entry-bytes CONSTANT_String [cp-entry]
-  (into (:tag cp-entry) (:string-index cp-entry)))
+  (conj (:tag cp-entry) (:string-index cp-entry)))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Long [cp-entry]
   (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
@@ -430,12 +420,12 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 ; unit test?
 (defn write-constant-pool-entry [stream entry]
-  (write-bytes stream (map byte-from-unsigned (constant-pool-entry-bytes entry))))
+  (write-bytes stream (constant-pool-entry-bytes entry)))
 
 ;; pool-writey stuff all needs tests
 (defn write-constant-pool [stream pool]
   ;; the necessity for (inc pool) is deeply weird but.. RTFS I guess.
-  (write-bytes stream (two-byte-index (inc (count pool))))
+  (write-bytes stream (inc (count pool)))
   (doseq [p pool]
     (write-constant-pool-entry stream p)))
 
@@ -443,7 +433,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 ;; this is going to be annoying, since attrs will require the class for
 ;; dispatch!
 (defn write-thing-list [stream write-fn thing-list]
-  (write-bytes stream (two-byte-index (count thing-list)))
+  (write-bytes stream (count thing-list))
   (doseq [t thing-list]
     (write-fn stream t)))
 
@@ -475,7 +465,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
      (write-attributes stream (:constant-pool java-class) java-class))
   ([stream constant-pool thing]
      (let [attribs (:attributes thing)]
-       (write-bytes stream (two-byte-index (count attribs)))
+       (write-bytes stream (count attribs))
        (doseq [a attribs]
          (write-attribute stream constant-pool a)))))
 

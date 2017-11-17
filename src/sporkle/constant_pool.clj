@@ -1,6 +1,6 @@
 (ns sporkle.constant-pool
   (:require [sporkle.core
-             :refer [bytes-to-int bytes-to-long each-with-index two-byte-index]])
+             :refer [bytes-to-int bytes-to-long each-with-index]])
   (:require [clojure.string :as str]))
 
 
@@ -47,7 +47,7 @@
 (defmulti cp-entry-value #(tag %2))
 
 (defmethod cp-entry-value CONSTANT_Utf8 [constant-pool pool-entry]
-  (str/join (map char (:bytes pool-entry))))
+  (:bytes pool-entry))
 
 (defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
   (bytes-to-int (:bytes pool-entry)))
@@ -69,13 +69,13 @@
    ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
 
 (defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-long (:name-and-type-index pool-entry))))
-   :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-long (:class-index pool-entry))))})
+  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (:name-and-type-index pool-entry)))
+   :class (cp-entry-value constant-pool (cp-nth constant-pool (:class-index pool-entry)))})
 
    ;; FIXME unify Method and Fieldref code
    
 (defmethod cp-entry-value CONSTANT_Fieldref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-long (:name-and-type-index pool-entry))))
+  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (:name-and-type-index pool-entry)))
    :class (cp-entry-value constant-pool (cp-nth constant-pool (bytes-to-long (:class-index pool-entry))))})
 
 (defmethod cp-entry-value :default [java-class pool-entry]
@@ -115,14 +115,14 @@
 (defn cp-with-utf8
   "Given a constant pool and a string, return a vector containing the constant pool with the Utf8 constant, and the cp index"
   [constant-pool string]
-  (cp-with-constant constant-pool {:tag [CONSTANT_Utf8] :bytes (seq (.getBytes string))}))
+  (cp-with-constant constant-pool {:tag [CONSTANT_Utf8] :bytes string}))
 
 
 (defn cp-with-class
   "Given a constant pool and a string, return a vector containing the constant pool containing the string as a Utf8 constant and a Class constant whose name-index aligns with it, and the cp index of the class constant"
   [constant-pool string]
   (let [[new-cp idx] (cp-with-utf8 constant-pool string)]
-    (cp-with-constant new-cp {:tag [CONSTANT_Class] :name-index (two-byte-index idx)})))
+    (cp-with-constant new-cp {:tag [CONSTANT_Class] :name-index idx})))
 
 
 (defn cp-with-name-and-type [constant-pool name descriptor]
@@ -130,7 +130,7 @@
   (let [[new-cp name-index]       (cp-with-utf8 constant-pool name)
         [new-cp descriptor-index] (cp-with-utf8 new-cp descriptor)]
 
-    (cp-with-constant new-cp {:tag [CONSTANT_NameAndType] :name-index (two-byte-index name-index) :descriptor-index (two-byte-index descriptor-index)})))
+    (cp-with-constant new-cp {:tag [CONSTANT_NameAndType] :name-index name-index :descriptor-index descriptor-index})))
 
 
 (defn cp-with-method [constant-pool class-name method-name descriptor]
@@ -138,5 +138,5 @@
   (let [[new-cp class-index]   (cp-with-class constant-pool class-name)
         [new-cp name-and-type-index] (cp-with-name-and-type new-cp method-name descriptor)]
 
-    (cp-with-constant new-cp {:tag [CONSTANT_Methodref] :class-index (two-byte-index class-index) :name-and-type-index (two-byte-index name-and-type-index)})))
+    (cp-with-constant new-cp {:tag [CONSTANT_Methodref] :class-index class-index :name-and-type-index name-and-type-index})))
 

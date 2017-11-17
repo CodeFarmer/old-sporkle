@@ -228,13 +228,13 @@
       (is (= 12 (count (:constant-pool java-class)))
           "should read the correct number of constant pool entries")
       
-      (is (= ACC_SUPER (access-flags java-class))
-          "class have no modifiers (except the fearsome ACC_SUPER)")
+      (is (= ACC_SUPER (:access-flags java-class))
+          "class should have no modifiers (except the fearsome ACC_SUPER)")
       
-      (is (= 2 (count (:this-class java-class)))
-          "should have two bytes for its this-class constant reference")
-      (is (= 2 (count (:super-class java-class)))
-          "should have two bytes for its superclass constant reference")
+      (is (integer? (:this-class java-class))
+          "should have two byte index for its this-class constant reference")
+      (is (integer? (:super-class java-class))
+          "should have two byte index for its superclass constant reference")
       
       ;; and the interfaces...
       (is (= 0 (count (:interfaces java-class)))
