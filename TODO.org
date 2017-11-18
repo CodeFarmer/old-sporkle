@@ -24,10 +24,10 @@
 
 - [ ] What shape should the code actually be?
 
-- [ ] How should classes be expressed?
-  - [ ] Does the intermediate struct of byte arrays really make sense?
+- [-] How should classes be expressed?
+  - [-] Does the intermediate struct of byte arrays really make sense?
     - The friendly form probably doesn't need a constant pool, for example
-    - [ ] Is it possible to parse out the constant pool without it?
+    - [X] Is it possible to parse out the constant pool without it?
       - Specifically can CP entries contain indices that are ahead of
         themselves in the pool? The spec does not seem to prevent it.
     - [ ] Having said that, do we need it for writing?

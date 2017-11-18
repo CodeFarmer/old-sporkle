@@ -78,13 +78,13 @@
       
       (is (not (nil? (:this-class clazz)))
           "java-class should have a this-class member")
-      (is (= 2 (count (:this-class clazz)))
-          "java-class this-class should be two bytes long")
+      (is (integer? (:this-class clazz))
+          "java-class this-class should be an index")
 
       (is (not (nil? (:super-class clazz)))
           "java-class should have a super-class")
-      (is (= 2 (count (:super-class clazz)))
-          "java-class super-class should be two bytes long")
+      (is (integer? (:super-class clazz))
+          "java-class super-class should be an index")
 
       (is (not (nil? (:major-version clazz)))
           "java-class should have a format major version")
@@ -97,9 +97,8 @@
 
       (is (not (nil? (:access-flags clazz)))
           "java-class should have some access flags")
-      (is (= 2 (count (:access-flags clazz)))
-          "java-class access flags should be two bytes long")
-
+      (is (integer? (:access-flags clazz))
+          "java-class access flags should be an integer")
       (is (coll? (:attributes clazz))
           "java-class should have an attributes vector"))))
 

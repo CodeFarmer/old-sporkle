@@ -96,11 +96,14 @@
 (defmethod read-constant-pool-entry CONSTANT_InvokeDynamic [bytes]
   (unpack-struct [[:tag 1] [:bootstrap-method-attr-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 
+(defn hex [b]
+  (format "0x%02X" b))
+
 (defmethod read-constant-pool-entry :default [bytes]
   (let [tag (first bytes)]
     (if (nil? tag)
       (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with nil tag")))
-      (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (format "0x%02X" (first bytes))))))))
+      (throw (IllegalArgumentException. (str "Unable to read in constant pool entry with tag " (hex (first bytes)) " (next few " (vec (map hex (take 4 (rest bytes)))) ")"))))))
 
 
 (defn read-struct-list-maplet
@@ -158,7 +161,7 @@
         count (bytes-to-long (take 4 (drop 2 bytes)))
         remainder (drop 6 bytes)]
 
-    [(into {:attribute-name-index name-index}
+    [(into {:attribute-name-index (bytes-to-long name-index)}
            (unpack-attribute-info constant-pool name-index (take count remainder)))
      (drop count remainder)]))
 
@@ -242,7 +245,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   [constant-pool thing]
   (if (nil? (:name-index thing))
     nil
-    (constant-value constant-pool (bytes-to-long (:name-index thing)))))
+    (constant-value constant-pool (:name-index thing))))
 
 ;; FIXME everything below needs a test
 ;; FIXME everything below needs a test
@@ -254,7 +257,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 (defn descriptor
   "Return the descriptor string for a method (or anything else with a descriptor-index"
   [constant-pool meth]
-  (constant-value constant-pool (bytes-to-long (:descriptor-index meth))))
+  (constant-value constant-pool (:descriptor-index meth)))
 
 ;; consider making this internal
 (defn indexed-name
@@ -283,7 +286,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   [constant-pool attribute]
   (if (nil? (:attribute-name-index attribute))
     nil
-    (constant-value constant-pool (bytes-to-long (:attribute-name-index attribute)))))
+    (constant-value constant-pool (:attribute-name-index attribute))))
 
 
 (defn interface-names
@@ -300,7 +303,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
       (if (empty? attribs)
         nil
         (let [attrib (first attribs)]
-          (if (= idx (bytes-to-long (:attribute-name-index attrib)))
+          (if (= idx (:attribute-name-index attrib))
             attrib
             (recur (rest attribs))))))))
 
@@ -339,13 +342,14 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (ref-bytes cp-entry))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Class [cp-entry]
-  (conj (:tag cp-entry) (:name-index cp-entry)))
+  (flatten [(:tag cp-entry) (two-byte-index (:name-index cp-entry))]))
 
 (defmethod constant-pool-entry-bytes CONSTANT_NameAndType [cp-entry]
-  (flatten [(:tag cp-entry) (:name-index cp-entry) (:descriptor-index cp-entry)]))
+  (flatten [(:tag cp-entry) (two-byte-index (:name-index cp-entry)) (two-byte-index (:descriptor-index cp-entry))]))
 
+;; FIXME pretty sure flatten is the wrong idiom here
 (defmethod constant-pool-entry-bytes CONSTANT_String [cp-entry]
-  (conj (:tag cp-entry) (:string-index cp-entry)))
+  (flatten [(:tag cp-entry) (two-byte-index (:string-index cp-entry))]))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Long [cp-entry]
   (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
@@ -403,7 +407,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
         code-count (count code-bytes)]
 
     [cp
-     {:attribute-name-index   (int-to-byte-pair name-index)
+     {:attribute-name-index   name-index
       ;; FIXME this assumes no exception table etc
       :attribute-length       (four-byte-count (+ code-count 12))
       :max-stack              (int-to-byte-pair max-stack)

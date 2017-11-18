@@ -42,9 +42,9 @@
     (let [[entry rest] (read-constant-pool-entry [0x0A 0x00 0x03 0x00 0x0A 0x01])]
       (is (= CONSTANT_Methodref (tag entry))
           "should record the correct tag")
-      (is (= [0x00 0x03] (:class-index entry))
+      (is (= 0x03 (:class-index entry))
           "should record the class index bytes")
-      (is (= [0x00 0x0A] (:name-and-type-index entry))
+      (is (= 0x0A (:name-and-type-index entry))
           "should record the name and type index")
       (is (= [0x01] rest)
           "should leave the remainder of the stream correctly"))
@@ -54,9 +54,9 @@
     (let [[entry rest] (read-constant-pool-entry [0x09 0x00 0x03 0x00 0x0A])]
       (is (= CONSTANT_Fieldref (tag entry))
           "should record the correct tag")
-      (is (= [0x00 0x03] (:class-index entry))
+      (is (= 0x03 (:class-index entry))
           "should record the class index bytes")
-      (is (= [0x00 0x0A] (:name-and-type-index entry))
+      (is (= 0x0A (:name-and-type-index entry))
           "should record the name and type index bytes"))
 
     (testing "reading an interface method ref entry, with a trailing byte"
@@ -64,9 +64,9 @@
       (let [[entry rest] (read-constant-pool-entry [0x0B 0x00 0x03 0x00 0x0A])]
         (is (= CONSTANT_InterfaceMethodref (tag entry))
             "should record the correct tag")
-        (is (= [0x00 0x03] (:class-index entry))
+        (is (= 0x03 (:class-index entry))
             "should record the class index bytes")
-        (is (= [0x00 0x0A] (:name-and-type-index entry))
+        (is (= 0x0A (:name-and-type-index entry))
             "should record the name and type index bytes"))))
 
 
@@ -74,7 +74,7 @@
     (let [[entry rest] (read-constant-pool-entry [0x08 0x00 0x05 0x10 0x00])]
       (is (= CONSTANT_String (tag entry))
           "should record the correct tag")
-      (is (= [0x00 0x05] (:string-index entry))
+      (is (= 0x05 (:string-index entry))
           "should record the string-index bytes")
       (is (= [0x10 0x00] rest)
           "should leave the correct remainder")))
@@ -149,7 +149,7 @@
   (testing "reading a generic attribute from a byte stream with trailing bytes"
 
     (let [[attr remainder] (read-attribute nil [0x00 0x01 0x00 0x00 0x00 0x03 0x0A 0x0B 0x0C 0x0D])]
-      (is (= [0x00 01] (:attribute-name-index attr))
+      (is (= 01 (:attribute-name-index attr))
           "first two bytes should be the atribute name index")
       (is (= [0x0A 0x0B 0x0C] (:info attr))
           "info should contain the right three bytes")
@@ -187,11 +187,11 @@
 
       (is (= [] (:attributes field))
           "should have no attributes")
-      (is (= [0x00 0x01] (:access-flags field))
+      (is (= 0x0001 (:access-flags field))
           "should select the correct access flag bytes")
-      (is (= [0x00 0x04] (:name-index field))
+      (is (= 0x04 (:name-index field))
           "should select the correct name index bytes")
-      (is (= [0x00 0x05] (:descriptor-index field))
+      (is (= 0x05 (:descriptor-index field))
           "should select the correct descriptor-index bytes")
       (is (= [0x00 0x01 0x00 0x06] remainder)
           "Should return the correct remainder bytes")))
@@ -201,11 +201,11 @@
     ;; nil leads to incorrect Code attribute unpacking, but we just care that it's there today
     (let [[method remainder] (read-field-or-method-info nil [0x00 0x01 0x00 0x04 0x00 0x05 0x00 0x01 0x00 0x06 0x00 0x00 0x00 0x1d 0x00 0x01 0x00 0x01 0x00 0x00 0x00 0x05 0x2a 0xb7 0x00 0x01 0xb1 0x00 0x00 0x00 0x01 0x00 0x07 0x00 0x00 0x00 0x06 0x00 0x01 0x00 0x00 0x00 0x01 0x00 0x01 0x00 0x08])]
       
-      (is (= [0x00 0x01] (:access-flags method))
+      (is (= 0x0001 (:access-flags method))
           "should select the correct access flag bytes")
-      (is (= [0x00 0x04] (:name-index method))
+      (is (= 0x04 (:name-index method))
           "should select the correct name index bytes")
-      (is (= [0x00 0x05] (:descriptor-index method))
+      (is (= 0x05 (:descriptor-index method))
           "should select the correct descriptor-index bytes")
       (is (= 1 (count (:attributes method)))
           "should have one (Code) attribute")
@@ -307,7 +307,7 @@
       (is (not (nil? code-attrib))
           "Code attribute should not be nil")
 
-      (is (= (bytes-to-long (:attribute-name-index code-attrib))
+      (is (= (:attribute-name-index code-attrib)
              (cp-find-utf8 constant-pool "Code"))
           "Code attribute should have name 'Code'")
 
@@ -372,7 +372,7 @@
 (deftest test-constant-pool-entry-bytes
 
   (testing "Utf8 constant"
-    (is (= [1 0 6 60 105 110 105 116 62] (constant-pool-entry-bytes {:tag [1] :bytes [60 105 110 105 116 62]}))
+    (is (= [1 0 6 60 105 110 105 116 62] (constant-pool-entry-bytes {:tag [1] :bytes "<init>"}))
         "should convert utf8 into tag byte, two-byte index, then content"))
 
   (testing "integer constant"
@@ -382,21 +382,21 @@
 
   (testing "method-ref constant"
     ;; field-ref and interface-method-ref use the same code
-    (is (= [10 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [10]}))))
+    (is (= [10 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag [10]}))))
   (testing "field-ref constant"
-    (is (= [9 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [9]}))))
+    (is (= [9 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag [9]}))))
   (testing "interface-method-ref constant"
-    (is (= [11 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index [0 10], :class-index [0 3], :tag [11]}))))
+    (is (= [11 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag [11]}))))
 
   (testing "class constant"
-    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index [0 11] :tag [7]}))))
+    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index 11 :tag [7]}))))
 
   (testing "name-and-type constant"
-    (is (= [12 0 4 0 5] (constant-pool-entry-bytes {:descriptor-index [0 5], :name-index [0 4], :tag [12]}))
+    (is (= [12 0 4 0 5] (constant-pool-entry-bytes {:descriptor-index 5, :name-index 4, :tag [12]}))
         "name-and-type constant should be ordered tag, name-index, descriptior-index"))
   
   (testing "string constant"
-    (is (= [8 0 16] (constant-pool-entry-bytes {:string-index [0 16] :tag [8]}))
+    (is (= [8 0 16] (constant-pool-entry-bytes {:string-index 16 :tag [8]}))
         "string constant should be ordered tag, string-index"))
   
   (testing "float constant"
