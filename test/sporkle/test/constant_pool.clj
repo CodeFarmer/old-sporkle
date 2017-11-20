@@ -25,7 +25,16 @@
       (is (= (Double. "2.19") (cp-entry-value cp double-entry))))
     
     (let [long-entry {:low-bytes [0 0 0 2], :high-bytes [0 3 0 0], :tag 5}]
-      (is (= 0x0003000000000002 (cp-entry-value [] long-entry))))))
+      (is (= 0x0003000000000002 (cp-entry-value [] long-entry)))))
+
+  (testing "Float constant pool value"
+    
+    (let [clazz (read-java-class-file "test/fixtures/FloatFieldStaticInit.class")
+          cp (:constant-pool clazz)
+          float-entry (nth cp 1)]
+
+      (is (= (Float. "2.19") (cp-entry-value cp float-entry)))
+      (is (= (Float. "2.19") (:bytes float-entry))))))
 
 
 (deftest test-cp-nth

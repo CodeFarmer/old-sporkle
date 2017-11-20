@@ -50,7 +50,7 @@
   (:bytes pool-entry))
 
 (defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
-  (Float/intBitsToFloat (bytes-to-long (:bytes pool-entry))))
+  (:bytes pool-entry))
 
 (defmethod cp-entry-value CONSTANT_Long [constant-pool pool-entry]
   (bit-or (bytes-to-long (:low-bytes pool-entry))

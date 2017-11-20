@@ -85,8 +85,8 @@
 
       (is (= CONSTANT_Float (:tag entry))
           "should read the correct tag")
-      (is (= [0x40 0x20 0x00 0x00] (:bytes entry))
-          "should have four bytes")
+      (is (= 2.5 (:bytes entry))
+          "should have four bytes pre-parsed into a float")
       (is (= [0xFF] rest)
           "should correctly return the remaining byte")
       (is (= 2.5 (cp-entry-value nil entry))

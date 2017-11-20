@@ -1,6 +1,6 @@
 (ns sporkle.classfile  
   (:require [sporkle.core
-             :refer [byte-from-unsigned byte-stream-seq bytes-to-long four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION MINOR_VERSION]])
+             :refer [byte-from-unsigned byte-stream-seq bytes-to-int bytes-to-long four-byte-count int-to-byte-pair read-stream-maplets two-byte-index unpack-struct write-bytes MAGIC_BYTES MAJOR_VERSION MINOR_VERSION]])
   (:require [sporkle.bytecode
              :refer [syms-to-opcodes]])
   (:require [sporkle.constant-pool
@@ -80,7 +80,7 @@
   (unpack-struct [[:tag 1 bytes-to-long] [:string-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Float [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:bytes 4]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:bytes 4 #(Float/intBitsToFloat (bytes-to-int %))]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Long [bytes]
   (unpack-struct [[:tag 1 bytes-to-long] [:high-bytes 4] [:low-bytes 4]] bytes))
