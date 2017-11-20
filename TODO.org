@@ -1,11 +1,11 @@
 - [-] constant-pool
-  - [-] :spacer is a kludge and I hate it
-    - [-] cp-nth
+  - [X] :spacer is a kludge and I hate it
+    - [X] cp-nth
       - [X] Implement
       - [X] Use everywhere
-      - [ ] abstract out deindex-foo
+      - [X] abstract out deindex-foo
     - [X] Remove :spacer and change cp-nth
-  - [ ] Double!
+  - [X] Double!
     - longBitsToDouble
   - [ ] constant-pool-entry-value
     - [ ] Finish all the multimethods

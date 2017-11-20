@@ -52,12 +52,17 @@
 (defmethod cp-entry-value CONSTANT_Integer [constant-pool pool-entry]
   (bytes-to-int (:bytes pool-entry)))
 
+(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
+  (Float/intBitsToFloat (bytes-to-int (:bytes pool-entry))))
+
 (defmethod cp-entry-value CONSTANT_Long [constant-pool pool-entry]
   (bit-or (bytes-to-long (:low-bytes pool-entry))
           (bit-shift-left (bytes-to-long (:high-bytes pool-entry)) 32)))
 
-(defmethod cp-entry-value CONSTANT_Float [constant-pool pool-entry]
-  (Float/intBitsToFloat (bytes-to-int (:bytes pool-entry))))
+(defmethod cp-entry-value CONSTANT_Double [constant-pool pool-entry]
+  (Double/longBitsToDouble 
+   (bit-or (bytes-to-long (:low-bytes pool-entry))
+           (bit-shift-left (bytes-to-long (:high-bytes pool-entry)) 32))))
 
 (defmethod cp-entry-value CONSTANT_NameAndType [constant-pool pool-entry]
   {:name (cp-entry-value constant-pool (cp-nth constant-pool (:name-index pool-entry)))
