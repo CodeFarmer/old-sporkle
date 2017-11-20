@@ -20,6 +20,7 @@
 (def ^:const CONSTANT_NameAndType        12)
 (def ^:const CONSTANT_Utf8                1)
 
+; will implement these last, can get a lot done without them
 (def ^:const CONSTANT_MethodHandle       15)
 (def ^:const CONSTANT_MethodType         16)
 (def ^:const CONSTANT_InvokeDynamic      18)
@@ -73,15 +74,25 @@
 
    ;; TODO this whole (nth constant-pool blahblahblah) thing should be abstracted
 
-(defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
+(defn ref-value [constant-pool pool-entry]
   {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (:name-and-type-index pool-entry)))
    :class (cp-entry-value constant-pool (cp-nth constant-pool (:class-index pool-entry)))})
 
-   ;; FIXME unify Method and Fieldref code
+;; It would be pretty great if we could have field and (particularly) method 
+;; refs evaluate to symbols that were Java interop-like, so
+;;
+;; .foo
+;; com.thing.Class/foo
+;; .-foo
+;;
+;; But there would be information loss, as in the JVM these have types and can
+;; be overloaded :(
+
+(defmethod cp-entry-value CONSTANT_Methodref [constant-pool pool-entry]
+  (ref-value constant-pool pool-entry))
    
 (defmethod cp-entry-value CONSTANT_Fieldref [constant-pool pool-entry]
-  {:name-and-type (cp-entry-value constant-pool (cp-nth constant-pool (:name-and-type-index pool-entry)))
-   :class (cp-entry-value constant-pool (cp-nth constant-pool (:class-index pool-entry)))})
+  (ref-value [constant-pool pool-entry]))
 
 (defmethod cp-entry-value :default [java-class pool-entry]
   (throw (IllegalArgumentException. (str "Unable to interpret constant pool entry with tag " (format "0x%02X" (tag pool-entry))))))
