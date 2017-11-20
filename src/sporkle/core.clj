@@ -62,7 +62,9 @@
 
 
 (defn unpack-struct
-  "Given a list of [:key integer] and a seq, return a vec containing 1) a map whose keys are all the keys from the pairs, plus seqs made of from the requisite numbers of bytes from aseq each (in the order they appear in avec), and 2) the remainder of the seq.
+  "Given a list of [:key integer handler-fn] and a seq, return a vec containing 1) a map whose keys are all the keys from the pairs, plus seqs made of from the requisite numbers of bytes from aseq each (in the order they appear in avec), and 2) the remainder of the seq.
+
+Handler-fn will, if supplied, be applied to the byte-seqs before returning. For sizes of 1 or 2 bytes this defaults to btes-to-long; if this is not desired then supply the identity function.
 
 Partial applications conform to the expectations of read-stream-maplets."
   
@@ -78,7 +80,9 @@ Partial applications conform to the expectations of read-stream-maplets."
         (nil? field-key) [amap aseq] ;; this is the return value
         (< field-size (count field-data)) (throw (IndexOutOfBoundsException. (str "Ran out of stream unpacking struct field " field-key ", needed " field-size ", got " field-data)))
         :else (recur (assoc amap field-key (if (nil? handler-fn)
-                                             field-data
+                                             (if (#{1 2} field-size)
+                                               (bytes-to-long field-data)
+                                               field-data)
                                              (handler-fn field-data)))
                      (rest avec)
                      (drop field-size aseq))))))

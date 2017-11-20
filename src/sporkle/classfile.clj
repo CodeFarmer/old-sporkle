@@ -60,41 +60,41 @@
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:bytes 4 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:bytes 4 bytes-to-long]] bytes))
 
 ; NOTE these next three are the same at the moment but that will change
 (defmethod read-constant-pool-entry CONSTANT_Methodref [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_Fieldref [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_InterfaceMethodref [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:class-index 2] [:name-and-type-index 2]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Class [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:name-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:name-index 2]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_NameAndType [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:name-index 2 bytes-to-long] [:descriptor-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:name-index 2] [:descriptor-index 2]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_String [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:string-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:string-index 2]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Float [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:bytes 4 #(Float/intBitsToFloat (bytes-to-int %))]] bytes))
+  (unpack-struct [[:tag 1] [:bytes 4 #(Float/intBitsToFloat (bytes-to-int %))]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Long [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:high-bytes 4] [:low-bytes 4]] bytes))
+  (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_Double [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:high-bytes 4] [:low-bytes 4]] bytes))
+  (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_MethodHandle [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:reference-kind 1 bytes-to-long] [:reference-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:reference-kind 1] [:reference-index 2]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_MethodType [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:descriptor-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:descriptor-index 2]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_InvokeDynamic [bytes]
-  (unpack-struct [[:tag 1 bytes-to-long] [:bootstrap-method-attr-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1] [:bootstrap-method-attr-index 2] [:name-and-type-index 2]] bytes))
 
 (defn hex [b]
   (format "0x%02X" b))

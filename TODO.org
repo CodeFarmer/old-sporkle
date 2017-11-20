@@ -19,7 +19,7 @@
 - [X] tag
   - [X] Remove remaining uses of (bytes-to-integral-type (:tag foo))
 
-- [ ] All the bytes-to-longs in unpack-struct calls are crappy. Pass
+- [X] All the bytes-to-longs in unpack-struct calls are crappy. Pass
   something else to maybe NOT do that?
 
 * code organisation

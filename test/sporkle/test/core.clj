@@ -88,13 +88,13 @@
   
   (testing "reading a struct with single-item fields"
 
-    (let [[amap remainder] (unpack-struct [[:front-two 2] [:middle-one 1] [:back-two 2]] [1 2 3 4 5])]
+    (let [[amap remainder] (unpack-struct [[:front-two 2 identity] [:middle-one 1 identity] [:back-two 2 identity]] [1 2 3 4 5])]
       (is (seq? (:front-two amap)) "multi-byte fields should be seqs")
       (is (= [3] (:middle-one amap)) "single-item fields should no longer be atomic")))
 
-  (testing "reading a struct with handlers"
+  (testing "reading a struct with handlers (including default handler for 1- and 2-byte fields)"
 
-    (let [[amap remainder] (unpack-struct [[:front-two 2 bytes-to-long] [:middle-one 1 bytes-to-long] [:back-two 2]] [1 2 3 4 5])]
+    (let [[amap remainder] (unpack-struct [[:front-two 2] [:middle-one 1] [:back-two 2 identity]] [1 2 3 4 5])]
       (is (= 0x0102 (:front-two amap)) "multi-byte fields be handled")
       (is (= 3 (:middle-one amap)) "single-item fields should be handled"))))
 

@@ -48,8 +48,8 @@
                              :info (0 1 0 0 0 1)}),
                :exception-table [],
                :code [:aload_0 :invokespecial 0 1 :return],
-               :max-stack (0 1),
-               :max-locals (0 1)}
+               :max-stack 1
+               :max-locals 1}
 
              friendly-code-attrib)))))
 

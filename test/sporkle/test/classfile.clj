@@ -311,10 +311,10 @@
              (cp-find-utf8 constant-pool "Code"))
           "Code attribute should have name 'Code'")
 
-      (is (= [0x00 0x01] (:max-stack code-attrib))
-          "Code attribute should now have a max-stack field")
-      (is (= [0x00 0x01] (:max-locals code-attrib))
-          "Code attribute should now have a max-locals field")
+      (is (= 1 (:max-stack code-attrib))
+          "Code attribute should now have a max-stack field that is parsed from two bytes to an index")
+      (is (= 1 (:max-locals code-attrib))
+          "Code attribute should now have a max-locals field that is parsed from two bytes to an index")
 
       (is (coll? (:code code-attrib))
           "Code attribute should now have a code bytes field")
