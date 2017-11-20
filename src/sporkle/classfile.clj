@@ -4,7 +4,7 @@
   (:require [sporkle.bytecode
              :refer [syms-to-opcodes]])
   (:require [sporkle.constant-pool
-             :refer [constant-value cp-find-utf8 cp-nth cp-with-utf8 tag CONSTANT_Class CONSTANT_Double CONSTANT_Integer CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_InvokeDynamic CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_MethodType CONSTANT_NameAndType CONSTANT_String CONSTANT_Utf8 WIDE_CONSTANTS]])
+             :refer [constant-value cp-find-utf8 cp-nth cp-with-utf8 CONSTANT_Class CONSTANT_Double CONSTANT_Integer CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_InvokeDynamic CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_MethodType CONSTANT_NameAndType CONSTANT_String CONSTANT_Utf8 WIDE_CONSTANTS]])
   (:require [clojure.java.io :as io]))
 
 ;; ClassFile {
@@ -56,45 +56,45 @@
 (defmethod read-constant-pool-entry CONSTANT_Utf8 [bytes]
   (let [[tag & rest] bytes]
     (let [length (bytes-to-long (take 2 rest))]
-      [{:tag [tag] :bytes (String. (byte-array (map byte-from-unsigned (take length (drop 2 rest)))))}
+      [{:tag tag :bytes (String. (byte-array (map byte-from-unsigned (take length (drop 2 rest)))))}
        (drop (+ length 2) rest)])))
 
 (defmethod read-constant-pool-entry CONSTANT_Integer [bytes]
-  (unpack-struct [[:tag 1] [:bytes 4]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:bytes 4 bytes-to-long]] bytes))
 
 ; NOTE these next three are the same at the moment but that will change
 (defmethod read-constant-pool-entry CONSTANT_Methodref [bytes]
-  (unpack-struct [[:tag 1] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_Fieldref [bytes]
-  (unpack-struct [[:tag 1] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_InterfaceMethodref [bytes]
-  (unpack-struct [[:tag 1] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:class-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Class [bytes]
-  (unpack-struct [[:tag 1] [:name-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:name-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_NameAndType [bytes]
-  (unpack-struct [[:tag 1] [:name-index 2 bytes-to-long] [:descriptor-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:name-index 2 bytes-to-long] [:descriptor-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_String [bytes]
-  (unpack-struct [[:tag 1] [:string-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:string-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Float [bytes]
-  (unpack-struct [[:tag 1] [:bytes 4]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:bytes 4]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_Long [bytes]
-  (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:high-bytes 4] [:low-bytes 4]] bytes))
 (defmethod read-constant-pool-entry CONSTANT_Double [bytes]
-  (unpack-struct [[:tag 1] [:high-bytes 4] [:low-bytes 4]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:high-bytes 4] [:low-bytes 4]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_MethodHandle [bytes]
-  (unpack-struct [[:tag 1] [:reference-kind 1 bytes-to-long] [:reference-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:reference-kind 1 bytes-to-long] [:reference-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_MethodType [bytes]
-  (unpack-struct [[:tag 1] [:descriptor-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:descriptor-index 2 bytes-to-long]] bytes))
 
 (defmethod read-constant-pool-entry CONSTANT_InvokeDynamic [bytes]
-  (unpack-struct [[:tag 1] [:bootstrap-method-attr-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
+  (unpack-struct [[:tag 1 bytes-to-long] [:bootstrap-method-attr-index 2 bytes-to-long] [:name-and-type-index 2 bytes-to-long]] bytes))
 
 (defn hex [b]
   (format "0x%02X" b))
@@ -168,7 +168,6 @@
 ;; ;;
 
 
-
 (defn read-cp-entry-list-maplet
   "This should be read-struct-list-maplet, except that for long and double constants you need to bump the index twice. No, me either."
   ;; "In retrospect, making 8-byte constants take two constant pool entries was a poor choice." :P
@@ -176,7 +175,7 @@
   (if (zero? count) [{key acc} bytes]
       (let [[descriptor remainder] (readfn bytes)]
         (recur (conj acc descriptor)
-               (if (WIDE_CONSTANTS (tag descriptor))
+               (if (WIDE_CONSTANTS (:tag descriptor))
                  (- count 2)
                  (dec count))
                key
@@ -317,7 +316,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (write-bytes stream MINOR_VERSION)
   (write-bytes stream MAJOR_VERSION))
 
-(defmulti constant-pool-entry-bytes tag)
+(defmulti constant-pool-entry-bytes :tag)
 
 (defmethod constant-pool-entry-bytes CONSTANT_Utf8 [cp-entry]
   ;; not convinced this is a great idea
@@ -325,9 +324,9 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
 
 (defmethod constant-pool-entry-bytes CONSTANT_Integer [cp-entry]
   ;; take 4 ensures you don't over/underrun in case of mangled fields, is this actually useful?
-  (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
+  (cons (:tag cp-entry) (take 4 (:bytes cp-entry))))
 (defmethod constant-pool-entry-bytes CONSTANT_Float [cp-entry]
-  (into (:tag cp-entry) (take 4 (:bytes cp-entry))))
+  (cons (:tag cp-entry) (take 4 (:bytes cp-entry))))
 
 (defn ref-bytes [cp-entry]
   ;; these are all already starting to look very repetitive, and they also duplicate information
@@ -342,14 +341,14 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
   (ref-bytes cp-entry))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Class [cp-entry]
-  (flatten [(:tag cp-entry) (two-byte-index (:name-index cp-entry))]))
+  (cons (:tag cp-entry) (two-byte-index (:name-index cp-entry))))
 
 (defmethod constant-pool-entry-bytes CONSTANT_NameAndType [cp-entry]
   (flatten [(:tag cp-entry) (two-byte-index (:name-index cp-entry)) (two-byte-index (:descriptor-index cp-entry))]))
 
 ;; FIXME pretty sure flatten is the wrong idiom here
 (defmethod constant-pool-entry-bytes CONSTANT_String [cp-entry]
-  (flatten [(:tag cp-entry) (two-byte-index (:string-index cp-entry))]))
+  (cons (:tag cp-entry) (two-byte-index (:string-index cp-entry))))
 
 (defmethod constant-pool-entry-bytes CONSTANT_Long [cp-entry]
   (flatten [(:tag cp-entry) (:high-bytes cp-entry) (:low-bytes cp-entry)]))
@@ -420,7 +419,7 @@ NOTE not called 'name' like the others of its ilk in order not to clash"
       :attributes             []}]))
   
 (defmethod constant-pool-entry-bytes :default [cp-entry]
-  (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (tag cp-entry))))))
+  (throw (IllegalArgumentException. (str "Unable to make flat bytes for pool entry with tag " (format "0x%02X" (:tag cp-entry))))))
 
 ; unit test?
 (defn write-constant-pool-entry [stream entry]

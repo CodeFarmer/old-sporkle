@@ -3,7 +3,7 @@
              :refer [byte-from-unsigned bytes-to-long byte-stream-seq]])
   (:require [sporkle.classfile :refer :all])
   (:require [sporkle.constant-pool
-             :refer [constant-value cp-entry-value cp-find-utf8 tag CONSTANT_Double CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_String CONSTANT_Utf8]])
+             :refer [constant-value cp-entry-value cp-find-utf8 CONSTANT_Double CONSTANT_Fieldref CONSTANT_Float CONSTANT_InterfaceMethodref CONSTANT_Long CONSTANT_MethodHandle CONSTANT_Methodref CONSTANT_String CONSTANT_Utf8]])
   (:require  [clojure.test :refer [deftest is testing]])
   (:require [clojure.java.io :as io]))
 
@@ -21,7 +21,7 @@
                           
       (is (= [0x0C 0x00 0x04] rest)
           "should correctly return the remaining bytes")
-      (is (= CONSTANT_Utf8 (tag entry))
+      (is (= CONSTANT_Utf8 (:tag entry))
           "should correctly set the tag")
       (is (= 12 (count (:bytes entry)))
           "should read the two-byte length correctly")
@@ -40,7 +40,7 @@
   (testing "reading a method ref entry, with a trailing byte"
 
     (let [[entry rest] (read-constant-pool-entry [0x0A 0x00 0x03 0x00 0x0A 0x01])]
-      (is (= CONSTANT_Methodref (tag entry))
+      (is (= CONSTANT_Methodref (:tag entry))
           "should record the correct tag")
       (is (= 0x03 (:class-index entry))
           "should record the class index bytes")
@@ -52,7 +52,7 @@
   (testing "reading a field ref entry, with a trailing byte"
 
     (let [[entry rest] (read-constant-pool-entry [0x09 0x00 0x03 0x00 0x0A])]
-      (is (= CONSTANT_Fieldref (tag entry))
+      (is (= CONSTANT_Fieldref (:tag entry))
           "should record the correct tag")
       (is (= 0x03 (:class-index entry))
           "should record the class index bytes")
@@ -62,7 +62,7 @@
     (testing "reading an interface method ref entry, with a trailing byte"
 
       (let [[entry rest] (read-constant-pool-entry [0x0B 0x00 0x03 0x00 0x0A])]
-        (is (= CONSTANT_InterfaceMethodref (tag entry))
+        (is (= CONSTANT_InterfaceMethodref (:tag entry))
             "should record the correct tag")
         (is (= 0x03 (:class-index entry))
             "should record the class index bytes")
@@ -72,7 +72,7 @@
 
   (testing "reading a string entry with trailing bytes"
     (let [[entry rest] (read-constant-pool-entry [0x08 0x00 0x05 0x10 0x00])]
-      (is (= CONSTANT_String (tag entry))
+      (is (= CONSTANT_String (:tag entry))
           "should record the correct tag")
       (is (= 0x05 (:string-index entry))
           "should record the string-index bytes")
@@ -83,7 +83,7 @@
 
     (let [[entry rest] (read-constant-pool-entry [0x04 0x40 0x20 0x00 0x00 0xFF])]
 
-      (is (= CONSTANT_Float (tag entry))
+      (is (= CONSTANT_Float (:tag entry))
           "should read the correct tag")
       (is (= [0x40 0x20 0x00 0x00] (:bytes entry))
           "should have four bytes")
@@ -96,7 +96,7 @@
 
     (let [[entry rest] (read-constant-pool-entry [0x05 0x00 0x00 0x00 0x00 0x40 0x20 0x00 0x00 0xFF])]
 
-      (is (= CONSTANT_Long (tag entry))
+      (is (= CONSTANT_Long (:tag entry))
           "should read the correct tag")
       (is (= [0x00 0x00 0x00 0x00] (:high-bytes entry))
           "should have four high bytes")
@@ -109,7 +109,7 @@
 
     (let [[entry rest] (read-constant-pool-entry [0x06 0x00 0x00 0x00 0x00 0x40 0x20 0x00 0x00 0xFF])]
 
-      (is (= CONSTANT_Double (tag entry))
+      (is (= CONSTANT_Double (:tag entry))
           "should read the correct tag")
       (is (= [0x00 0x00 0x00 0x00] (:high-bytes entry))
           "should have four high bytes")
@@ -133,7 +133,7 @@
             "should read the right number of constants")
         (is (every? #(contains? % :tag) pool)
             "should return a seq of objects with tag fields")
-        (is (= 0x0A (tag (first pool)))
+        (is (= 0x0A (:tag (first pool)))
             "should have the constant pool objects in the right order"))))
 
   (testing "reading the constant pool from a class with wide constants"
@@ -351,7 +351,7 @@
   (let [clazz (read-java-class-file "test/fixtures/Java8Lambda.class")
         constant-pool (:constant-pool clazz)]
     (testing "loading the new constant pool struct types"
-      (is (some #(= CONSTANT_MethodHandle (first (:tag %))) constant-pool)))
+      (is (some #(= CONSTANT_MethodHandle (:tag %)) constant-pool)))
     ))
 
 
@@ -372,43 +372,43 @@
 (deftest test-constant-pool-entry-bytes
 
   (testing "Utf8 constant"
-    (is (= [1 0 6 60 105 110 105 116 62] (constant-pool-entry-bytes {:tag [1] :bytes "<init>"}))
+    (is (= [1 0 6 60 105 110 105 116 62] (constant-pool-entry-bytes {:tag 1 :bytes "<init>"}))
         "should convert utf8 into tag byte, two-byte index, then content"))
 
   (testing "integer constant"
     ;; consider making assertions about incoming field lengths?
-    (is (= [3 24 109 0 1] (constant-pool-entry-bytes {:tag [3] :bytes [24 109 0 1]}))
+    (is (= [3 24 109 0 1] (constant-pool-entry-bytes {:tag 3 :bytes [24 109 0 1]}))
         "should convert integer simply as a tag and the four bytes"))
 
   (testing "method-ref constant"
     ;; field-ref and interface-method-ref use the same code
-    (is (= [10 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag [10]}))))
+    (is (= [10 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag 10}))))
   (testing "field-ref constant"
-    (is (= [9 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag [9]}))))
+    (is (= [9 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag 9}))))
   (testing "interface-method-ref constant"
-    (is (= [11 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag [11]}))))
+    (is (= [11 0 3 0 10] (constant-pool-entry-bytes {:name-and-type-index 10, :class-index 3, :tag 11}))))
 
   (testing "class constant"
-    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index 11 :tag [7]}))))
+    (is (= [7 0 11] (constant-pool-entry-bytes {:name-index 11 :tag 7}))))
 
   (testing "name-and-type constant"
-    (is (= [12 0 4 0 5] (constant-pool-entry-bytes {:descriptor-index 5, :name-index 4, :tag [12]}))
+    (is (= [12 0 4 0 5] (constant-pool-entry-bytes {:descriptor-index 5, :name-index 4, :tag 12}))
         "name-and-type constant should be ordered tag, name-index, descriptior-index"))
   
   (testing "string constant"
-    (is (= [8 0 16] (constant-pool-entry-bytes {:string-index 16 :tag [8]}))
+    (is (= [8 0 16] (constant-pool-entry-bytes {:string-index 16 :tag 8}))
         "string constant should be ordered tag, string-index"))
   
   (testing "float constant"
-    (is (= [4 64 32 0 0] (constant-pool-entry-bytes {:bytes [64 32 0 0] :tag [4]}))
+    (is (= [4 64 32 0 0] (constant-pool-entry-bytes {:bytes [64 32 0 0] :tag 4}))
         "float constant should be ordered tag, bytes"))
 
   (testing "long constant"
-    (is (= [5 00 00 34 23] (constant-pool-entry-bytes {:high-bytes [00 00] :low-bytes [34 23] :tag [5]}))
+    (is (= [5 00 00 34 23] (constant-pool-entry-bytes {:high-bytes [00 00] :low-bytes [34 23] :tag 5}))
         "long constant is tag, two high bytes, two low bytes"))
 
   (testing "double constant"
-    (is (= [6 04 00 34 23] (constant-pool-entry-bytes {:high-bytes [04 00] :low-bytes [34 23] :tag [6]}))
+    (is (= [6 04 00 34 23] (constant-pool-entry-bytes {:high-bytes [04 00] :low-bytes [34 23] :tag 6}))
         "double constant is tag, two high bytes, two low bytes")))
 
 

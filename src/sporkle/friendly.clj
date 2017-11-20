@@ -23,7 +23,7 @@
 ;; dissassembly
 
 (defn friendly-cp-entry [constant-pool entry]
-  (list 'cp-entry (-get-symbol-for-constant-tag (first (:tag entry))) (cp-entry-value constant-pool entry)))
+  (list 'cp-entry (-get-symbol-for-constant-tag (:tag entry)) (cp-entry-value constant-pool entry)))
 
 (declare friendly-attr)
 

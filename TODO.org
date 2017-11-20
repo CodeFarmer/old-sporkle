@@ -16,8 +16,11 @@
       - Considered, not doing it (long story, overloading)
     - [X] Unify field and method ref code
 
-- [ ] tag
-  - [ ] Remove remaining uses of (bytes-to-integral-type (:tag foo))
+- [X] tag
+  - [X] Remove remaining uses of (bytes-to-integral-type (:tag foo))
+
+- [ ] All the bytes-to-longs in unpack-struct calls are crappy. Pass
+  something else to maybe NOT do that?
 
 * code organisation
 
