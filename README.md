@@ -34,12 +34,12 @@ Ugly eh? This is the plan:
 (public
   (java-class "Nothing"
     (private
-      (field "x" java.lang.Object)
+      (field java.lang.Object "x"
     (public
       (method :void "doNothing" [] [:return]))
       (method java.lang.Object "getX" []
-        [:aload_0 
-         :getfield 0 2
+        [:aload_0      ; this
+         :getfield "x" ; infer containing class unless specified, guess type if unambiguous
          :areturn]))))
 ```
 
