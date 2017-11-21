@@ -43,7 +43,7 @@ Ugly eh? This is the plan:
          :areturn]))))
 ```
 
-The shortiss term goal is feature parity with Pork, so support for
+The shortish term goal is feature parity with Pork, so support for
 exception tables, smart arguments for JVM bytecode instructions, line
 number tables and so on will be next once the syntax is nice.
 
