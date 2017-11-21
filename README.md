@@ -34,7 +34,7 @@ Ugly eh? This is the plan:
 (public
   (java-class "Nothing"
     (private
-      (field java.lang.Object "x"
+      (field java.lang.Object "x")
     (public
       (method :void "doNothing" [] [:return]))
       (method java.lang.Object "getX" []
