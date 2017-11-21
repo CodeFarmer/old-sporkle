@@ -43,9 +43,9 @@ Ugly eh? This is the plan:
          :areturn]))))
 ```
 
-The shortisd term goal is feature parity with Pork, so support for
-exception tables, smart arguments for JVM bytecode instructions and so
-on will be next once the syntax is nice.
+The shortiss term goal is feature parity with Pork, so support for
+exception tables, smart arguments for JVM bytecode instructions, line
+number tables and so on will be next once the syntax is nice.
 
 ## License
 
