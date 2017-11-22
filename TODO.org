@@ -1,26 +1,19 @@
-- [X] constant-pool
-  - [X] :spacer is a kludge and I hate it
-    - [X] cp-nth
-      - [X] Implement
-      - [X] Use everywhere
-      - [X] abstract out deindex-foo
-    - [X] Remove :spacer and change cp-nth
-  - [X] Double!
-    - longBitsToDouble
-  - [X] constant-pool-entry-value
-    - [X] Finish all the multimethods
-      - Except MethodHandle and its little friends
-    - [X] Consider having a lot of constant-pool entries that are
-      symbols (like Classes and methodrefs) evaluate to symbols
-      instead of Strings and structs
-      - Considered, not doing it (long story, overloading)
-    - [X] Unify field and method ref code
+* functionality
 
-- [X] tag
-  - [X] Remove remaining uses of (bytes-to-integral-type (:tag foo))
+- [ ] To start with, the following low-tech example should work:
+  - Requirements:
+    - [ ] java-class macro that can deal with fields and methods
+    - [ ] bytecode parser that knows the right operand types and can update the constant pool
+    - [ ] max-stack calculation (only supporting the opcodes with constant stack delta)
+    - [ ] max-locals calculation
 
-- [X] All the bytes-to-longs in unpack-struct calls are crappy. Pass
-  something else to maybe NOT do that?
+  - (java-class "Nothing"
+      (field "Ljava.lang.Object;" "x")
+      (field "Ljava.lang.Object;" "y")
+      (method "Ljava.lang.Object;" "getX" [] 
+        [:aload_0   ; this
+         :getfield  (cp-field-ref "Nothing" "Ljava.lang.Object;" "x")
+         :areturn]
 
 * code organisation
 
@@ -36,4 +29,4 @@
       - Can we just write directly from the friendly form?
 
 - [ ] What exactly should the friendly form look like?
-  - Maybe this is actually the first question to ask.
+

@@ -49,7 +49,7 @@ number tables and so on will be next once the syntax is nice.
 
 ## License
 
-Copyright (C) 2011 Joel Gluth
+Copyright (C) 2017 Joel Gluth
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
