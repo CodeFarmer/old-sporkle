@@ -5,7 +5,9 @@
              ;; FIXME: does cp-with-code-attribute go in constant-pool?
              :refer [cp-with-code-attribute ACC_PUBLIC ACC_SUPER]])
   (:require [sporkle.constant-pool
-             :refer [cp-with-class cp-with-utf8]]))
+             :refer [cp-with-class cp-with-utf8]])
+  (:require [sporkle.bytecode
+             :refer [syms-to-opcodes]]))
 
 
 (defn public [thing]
@@ -102,8 +104,22 @@
      :invokespecial "java/lang/Object" "<init>" "()V"
      :return]))
 
-(defn max-stack-for-bc [bytecode]
-  1) ;; FIXME
+(defn -only-opcodes [bytecode]
+  (filter keyword? bytecode))
+
+(defn max-stack-for-bc 
+  ([bytecode]
+   (max-stack-for-bc 0 0 bytecode))
+  ([current-max current-sum bytecode]
+   (if (empty? bytecode)
+     current-max
+     (let [[x & rest] bytecode]
+       (if (keyword? x)
+         (let [[sym _ _ stack-delta] (get syms-to-opcodes x)
+               new-sum (+ current-sum stack-delta)
+               new-max (max current-max new-sum)]
+           (recur new-max new-sum rest))
+         (recur current-max current-sum rest))))))
 
 (defn max-locals-for-bc [signature bytecode]
   1) ;; FIXME

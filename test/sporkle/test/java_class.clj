@@ -226,6 +226,14 @@
 
 ;; Fancy macros
 
+(deftest test-max-stack-for-bc
+  (testing "max stack calculation for a section of bytecode"
+    (is (= 0 1) "You actually can't calculate the stack max accurately, so we have to add it to the signature for method")))
+
+(deftest test-max-locals-for-bc
+  (testing "max locals calculation for a method"
+    (is (= 0 1) "You actually can't calculate the locals max accurately, see above")))
+
 (deftest test-java-class-as-macro
 
   (testing "java-class macro that can deal with field"
