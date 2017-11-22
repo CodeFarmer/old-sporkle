@@ -14,10 +14,10 @@
   (assoc thing :access-flags (bit-or (get thing :access-flags 0) ACC_PUBLIC)))
 
 
-(defn java-class
+(defn -java-class
 
   ([class-name]
-     (java-class class-name "java/lang/Object"))
+     (-java-class class-name "java/lang/Object"))
 
   ([class-name super-class-name]
 
@@ -101,3 +101,25 @@
     [:aload_0
      :invokespecial "java/lang/Object" "<init>" "()V"
      :return]))
+
+(defn max-stack-for-bc [bytecode]
+  1) ;; FIXME
+
+(defn max-locals-for-bc [signature bytecode]
+  1) ;; FIXME
+
+(defn -macro-component-to-class-modifier [aform]
+  (let [[sym & args] aform]
+
+    (cond
+
+      (= 'field sym) (concat '(jc-with-field ACC_PUBLIC) args)
+
+      (= 'method sym) (let [[signature name bytecode] args] 
+                        (concat '(jc-with-method ACC_PUBLIC) [name signature (max-stack-for-bc bytecode) (max-locals-for-bc signature bytecode) bytecode]))
+
+      :default (throw (IllegalArgumentException. (str "Unable to figure out what to add to class for " aform))))))
+
+(defmacro java-class [class-name & rest]
+  `(-> (-java-class ~class-name)
+       ~@(map -macro-component-to-class-modifier rest)))

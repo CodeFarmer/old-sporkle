@@ -10,7 +10,7 @@
   - (java-class "Nothing"
       (field "Ljava.lang.Object;" "x")
       (field "Ljava.lang.Object;" "y")
-      (method "Ljava.lang.Object;" "getX" [] 
+      (method "()Ljava.lang.Object;" "getX"
         [:aload_0   ; this
          :getfield  (cp-field-ref "Nothing" "Ljava.lang.Object;" "x")
          :areturn]

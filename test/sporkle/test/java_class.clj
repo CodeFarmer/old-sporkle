@@ -212,7 +212,6 @@
           (is (= "void" (.getName (.getReturnType (first methods)))))))))
 
 
-
 (deftest test-write-class-with-default-constructor
   (testing "writing a class that uses the default constructor logic and can be loaded by the JVM, then instantiated"
     (with-open [stream (ByteArrayOutputStream.)]
@@ -224,3 +223,24 @@
             instance (.newInstance clazz)]
           
           (is (not (nil? instance)))))))
+
+;; Fancy macros
+
+(deftest test-java-class-as-macro
+
+  (testing "java-class macro that can deal with field"
+    (let [clazz (java-class "Nothing"
+                            (field "Ljava.lang.Object;" "x"))]
+      (is (= 1 (count (:fields clazz))))))
+
+  (testing "java-class macro that can deal with method"
+    (let [clazz (java-class "Nothing"
+                            (method "()V" "doNothing"
+                                    [:return]))]
+
+      (is (= 1 (count (:methods clazz))))))
+
+  (testing "java-class macro that can deal with fields and methods in arbitrary order"))
+
+(deftest test-java-class-macro-method-building
+  (testing "constant reference in bytecode spec"))
