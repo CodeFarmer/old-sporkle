@@ -3,6 +3,8 @@
 Written as a compare-and-contrast programming exercise, loosely based on
 Pork (http://github.com/CodeFarmer/pork).
 
+ABANDONED CODE - starting again in the 'sporkle' project.
+
 Has three main parts:
 
 1. *Classfile read/write* - parsing JVM class file streams into structs that correspond to the format laid out in the [JVM spec](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html), and writing those structs back into byte streams.
